@@ -155,7 +155,7 @@
             margin-bottom: 15px;
             border-bottom: 1px solid #222;
         }
-        .post-meta {
+        .post-card .post-meta {
             font-size: 12px;
             color: #777;
             margin-bottom: 5px;
@@ -240,6 +240,7 @@
                     <h2 style="margin-top:0; color: #00ffff;" id="stickName">NOME DA ENTIDADE</h2>
                     <p>Injeção de Sistema: <span class="highlight" id="stickDate">--/--/----</span></p>
                     <p>Baixas em Combate: <span class="highlight" style="color:red;" id="stickDeaths">0</span></p>
+                    <p id="stickHistoryRow" style="display:none;">Variações de Nome: <span class="highlight" style="color:#ffcc00;" id="stickHistory">Nenhuma</span></p>
                 </div>
             </div>
             <h4 style="color: #ff9900; margin-bottom: 5px; text-transform: uppercase;">[ Registro Fluido de Memórias ]</h4>
@@ -485,19 +486,57 @@
         });
     });
 
-    // Ação: Buscar Memórias de Entidades (Matrix HUD)
+    // Ação: Buscar Memórias de Entidades (Matrix HUD) - Atualizado para suportar variações de nomes!
     document.getElementById('btnBuscar').addEventListener('click', async () => {
-        const nome = document.getElementById('stickmanName').value.trim();
-        if (!nome) return;
+        const nomeDigitado = document.getElementById('stickmanName').value.trim();
+        if (!nomeDigitado) return;
 
         try {
-            const resposta = await get(ref(db, `stickmans/${nome}`));
+            // Primeiro, tenta buscar diretamente pelo nó exato
+            let resposta = await get(ref(db, `stickmans/${nomeDigitado}`));
+            let dados = null;
+            let nomeFinal = nomeDigitado;
+
             if (resposta.exists()) {
-                const dados = resposta.val();
+                dados = resposta.val();
+            } else {
+                // Se não achou direto, varre os stickmans para ver se o nome digitado está na lista de variações (historico)
+                const todosStickmansSnap = await get(ref(db, 'stickmans'));
+                if (todosStickmansSnap.exists()) {
+                    todosStickmansSnap.forEach(childSnap => {
+                        const sData = childSnap.val();
+                        // Verifica se existe o campo "historico_nomes" e se ele contém o nome procurado
+                        if (sData.historico_nomes && Array.isArray(sData.historico_nomes)) {
+                            const achouVariacao = sData.historico_nomes.some(n => n.toLowerCase() === nomeDigitado.toLowerCase());
+                            if (achouVariacao) {
+                                dados = sData;
+                                nomeFinal = childSnap.key; // O nome principal/atual dele no banco
+                            }
+                        } else if (sData.historico_nomes && typeof sData.historico_nomes === 'string') {
+                            if (sData.historico_nomes.toLowerCase().includes(nomeDigitado.toLowerCase())) {
+                                dados = sData;
+                                nomeFinal = childSnap.key;
+                            }
+                        }
+                    });
+                }
+            }
+
+            if (dados) {
                 document.getElementById('profilePanel').style.display = "block";
-                document.getElementById('stickName').innerText = nome.toUpperCase();
+                document.getElementById('stickName').innerText = nomeFinal.toUpperCase();
                 document.getElementById('stickDate').innerText = dados.creation_date || dados.criacao || "Desconhecida";
                 document.getElementById('stickDeaths').innerText = dados.mortes || "0";
+                
+                // Mostrar a linha de histórico caso existam variações salvas
+                const histRow = document.getElementById('stickHistoryRow');
+                const histSpan = document.getElementById('stickHistory');
+                if (dados.historico_nomes) {
+                    histRow.style.display = "block";
+                    histSpan.innerText = Array.isArray(dados.historico_nomes) ? dados.historico_nomes.join(", ") : dados.historico_nomes;
+                } else {
+                    histRow.style.display = "none";
+                }
                 
                 if(dados.image_b64 || dados.avatar_b64) {
                     document.getElementById('stickAvatar').src = `data:image/png;base64,${dados.image_b64 || dados.avatar_b64}`;
@@ -512,7 +551,7 @@
                         log.innerHTML += `
                             <div class="log-entry">
                                 <span class="log-user">User:</span> ${conversa.user}<br>
-                                <span class="log-ai">${nome}:</span> ${conversa.ai}
+                                <span class="log-ai">${nomeFinal}:</span> ${conversa.ai}
                             </div>
                         `;
                     });
