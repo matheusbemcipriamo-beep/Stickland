@@ -1,1122 +1,1219 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stickland - Rede Social Matrix</title>
-    <style>
-        /* Estilo Retro / Newgrounds / Hacker Avançado */
-        body {
-            background-color: #121212;
-            color: #d3d3d3;
-            font-family: 'Courier New', Courier, monospace;
-            margin: 0;
-            padding: 10px;
-        }
-        
-        .main-wrapper {
-            max-width: 950px;
-            margin: 0 auto;
-            border: 3px solid #ff9900;
-            background-color: #1e1e1e;
-            box-shadow: 0px 0px 20px #ff990033;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stickman Desktop - Multiplayer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .header {
-            text-align: center;
-            border-bottom: 2px dashed #ff9900;
-            padding: 15px;
-            background: #1a1a1a;
-        }
-        .header h1 {
-            color: #ffcc00;
-            margin: 0;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            font-size: 24px;
-        }
+  /* ── LOBBY ── */
+  #lobbyScreen {
+    position: fixed; inset: 0;
+    background: #0a0a12;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-family: 'Courier New', monospace;
+    color: #d3d3d3;
+    z-index: 999;
+  }
+  #lobbyScreen h1 {
+    font-size: 32px; color: #ffcc00;
+    text-transform: uppercase; letter-spacing: 4px;
+    text-shadow: 0 0 18px #ff990066;
+    margin-bottom: 6px;
+  }
+  #lobbyScreen p.sub { font-size: 12px; color: #666; margin-bottom: 30px; }
+  .lobby-box {
+    background: #141414;
+    border: 2px solid #ff9900;
+    box-shadow: 0 0 30px #ff990033;
+    padding: 30px 40px;
+    width: 380px;
+    text-align: center;
+  }
+  .lobby-box input {
+    width: 100%; padding: 10px;
+    background: #0a0a0a; border: 1px solid #444;
+    color: #00ffff; font-family: inherit; font-size: 14px;
+    margin-bottom: 12px;
+  }
+  .lobby-box input:focus { outline: none; border-color: #ff9900; }
+  .lobby-box label { font-size: 11px; color: #888; display: block; text-align: left; margin-bottom: 4px; }
+  .btn-main {
+    width: 100%; padding: 12px;
+    background: #ff9900; color: #111;
+    border: none; font-weight: bold; font-size: 14px;
+    cursor: pointer; text-transform: uppercase;
+    letter-spacing: 1px; margin-top: 6px;
+  }
+  .btn-main:hover { background: #ffcc00; }
+  .btn-main.red { background: #444; color: #ccc; margin-top: 8px; }
+  .btn-main.red:hover { background: #555; }
+  #lobbyStatus {
+    margin-top: 16px; font-size: 12px; color: #ff9900;
+    min-height: 18px;
+  }
+  #playerList {
+    margin-top: 12px; text-align: left;
+    max-height: 120px; overflow-y: auto;
+  }
+  .player-entry {
+    font-size: 12px; padding: 4px 6px;
+    border-bottom: 1px solid #1a1a1a; color: #00ffff;
+  }
+  .player-entry.me { color: #00ff66; }
 
-        /* Menu de Abas */
-        .nav-tabs {
-            display: none; /* Só aparece logado */
-            background: #111;
-            border-bottom: 2px solid #ff9900;
-            flex-wrap: wrap;
-        }
-        .tab-btn {
-            background: transparent;
-            color: #888;
-            border: none;
-            padding: 12px 20px;
-            font-family: inherit;
-            font-weight: bold;
-            cursor: pointer;
-            text-transform: uppercase;
-            border-right: 1px solid #222;
-        }
-        .tab-btn:hover { color: #ffcc00; background: #222; }
-        .tab-btn.active {
-            color: #111;
-            background: #ff9900;
-        }
+  /* ── DESKTOP ── */
+  #desktop {
+    display: none;
+    position: fixed; inset: 0;
+    overflow: hidden;
+    cursor: none;
+  }
+  #desktopBg {
+    position: absolute; inset: 0;
+    background: url('https://upload.wikimedia.org/wikipedia/en/8/8e/Windowsxp.png') center/cover no-repeat;
+  }
+  /* Taskbar */
+  #taskbar {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 36px;
+    background: linear-gradient(to bottom, #1f5fa6, #163d72);
+    border-top: 2px solid #3a7bd5;
+    display: flex; align-items: center;
+    padding: 0 8px; gap: 8px;
+    z-index: 500;
+  }
+  #startBtn {
+    background: #3c8a3c; color: #fff;
+    border: 1px solid #5ab55a;
+    padding: 3px 12px 3px 8px;
+    font-weight: bold; font-size: 13px;
+    cursor: pointer; border-radius: 2px;
+    font-family: 'Tahoma', sans-serif;
+    display: flex; align-items: center; gap: 4px;
+  }
+  #taskbarTime {
+    margin-left: auto; color: #fff;
+    font-family: 'Tahoma', sans-serif;
+    font-size: 12px; padding: 2px 6px;
+    background: #1a5ea8; border: 1px solid #2d6fc0;
+  }
+  .taskbar-btn {
+    background: #1a5ea8; color: #fff;
+    border: 1px solid #2d6fc0;
+    padding: 3px 10px; font-size: 11px;
+    cursor: pointer; font-family: 'Tahoma', sans-serif;
+  }
+  .taskbar-btn:hover { background: #2567be; }
+  .taskbar-btn.active { background: #0d4080; border-style: inset; }
 
-        .status-bar {
-            color: #ff3333;
-            font-weight: bold;
-            text-align: center;
-            padding: 10px;
-            background: #000;
-            font-size: 13px;
-        }
+  /* My own cursor */
+  #myCursor {
+    position: absolute; width: 20px; height: 20px;
+    pointer-events: none; z-index: 9999;
+    transform: translate(-2px,-2px);
+  }
+  #myCursor svg { width: 20px; height: 20px; }
 
-        /* Conteúdo das Abas */
-        .tab-content {
-            display: none;
-            padding: 20px;
-        }
-        .tab-content.active { display: block; }
+  /* Other players cursors */
+  .remote-cursor {
+    position: absolute; pointer-events: none;
+    z-index: 9998; transform: translate(-2px,-2px);
+  }
+  .remote-cursor svg { width: 20px; height: 20px; }
+  .remote-cursor-label {
+    position: absolute; top: -16px; left: 18px;
+    background: #000; color: #00ffff;
+    font-size: 10px; padding: 1px 4px;
+    border: 1px solid #00ffff;
+    font-family: 'Courier New', monospace;
+    white-space: nowrap; pointer-events: none;
+  }
 
-        /* Formulários */
-        .search-box, .post-box, .chat-box {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        input[type="text"], textarea, select {
-            flex: 1;
-            padding: 10px;
-            background: #0a0a0a;
-            border: 1px solid #444;
-            color: #00ffff;
-            font-family: inherit;
-        }
-        input[type="text"]:focus, textarea:focus {
-            border-color: #ff9900;
-            outline: none;
-        }
-        button {
-            background: #ff9900;
-            color: #111;
-            border: none;
-            padding: 10px 20px;
-            font-weight: bold;
-            cursor: pointer;
-            text-transform: uppercase;
-        }
-        button:hover { background: #ffcc00; }
-        
-        .google-btn {
-            background: #df4a32;
-            color: white;
-            font-size: 15px;
-            padding: 15px 30px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 40px auto;
-        }
-        .google-btn:hover { background: #ff5c42; }
+  /* Stickman entity */
+  .stickman-entity {
+    position: absolute;
+    pointer-events: none;
+    z-index: 400;
+    text-align: center;
+  }
+  .stickman-canvas {
+    display: block;
+    pointer-events: all;
+    cursor: grab;
+  }
+  .stickman-canvas:active { cursor: grabbing; }
+  .stickman-nametag {
+    font-family: 'Courier New', monospace;
+    font-size: 10px; font-weight: bold;
+    color: #00ffff; background: #111;
+    border: 1px solid #00ffff;
+    padding: 1px 5px; display: inline-block;
+    margin-bottom: 2px;
+  }
+  .stickman-hp-wrap {
+    width: 80px; height: 7px;
+    background: #222; border: 1px solid #555;
+    margin: 2px auto 0;
+  }
+  .stickman-hp-bar {
+    height: 100%; background: #00ff66;
+    transition: width 0.2s;
+  }
+  .stickman-bubble {
+    position: absolute;
+    background: #fff; color: #000;
+    border: 2px solid #000;
+    border-radius: 6px;
+    font-family: 'Arial', sans-serif;
+    font-size: 11px; font-weight: bold;
+    padding: 4px 8px;
+    max-width: 160px; white-space: normal;
+    top: -44px; left: 50%; transform: translateX(-50%);
+    z-index: 10;
+    animation: bubbleFade 4s forwards;
+  }
+  @keyframes bubbleFade {
+    0%,80% { opacity:1; } 100% { opacity:0; }
+  }
 
-        /* HUD Matrix Expandido */
-        .profile-header {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            background: #0a0a0a;
-            padding: 15px;
-            border: 1px solid #ff990088;
-            margin-top: 15px;
-        }
-        .avatar-img {
-            width: 120px;
-            height: 120px;
-            border: 2px solid #00ffff;
-            background: #000;
-            object-fit: contain;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            width: 100%;
-        }
-        .stats-grid p { margin: 3px 0; font-size: 13px; }
-        .highlight { color: #00ffff; font-weight: bold; }
-        
-        /* Cores Temáticas de Facção */
-        .faction-hero { color: #00ff66; font-weight: bold; text-shadow: 0 0 5px #00ff6644; }
-        .faction-villain { color: #ff3333; font-weight: bold; text-shadow: 0 0 5px #ff333344; }
-        .faction-citizen { color: #ffcc00; font-weight: bold; }
+  /* Paint Studio Window */
+  #paintWindow {
+    position: absolute;
+    top: 60px; left: 60px;
+    width: 560px;
+    background: #ece9d8;
+    border: 2px solid #0054a0;
+    box-shadow: 4px 4px 12px rgba(0,0,0,0.5);
+    z-index: 600;
+    display: none;
+    font-family: 'Tahoma', sans-serif;
+    user-select: none;
+  }
+  .win-titlebar {
+    background: linear-gradient(to right, #0054a0, #2b7bdd);
+    color: #fff; padding: 4px 8px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px; font-weight: bold;
+    cursor: move;
+  }
+  .win-controls { display: flex; gap: 2px; }
+  .win-btn {
+    width: 16px; height: 14px;
+    background: #d9d9d9; border: 1px solid #888;
+    font-size: 10px; font-weight: bold;
+    cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    line-height: 1; color: #000;
+  }
+  .win-btn:hover { background: #fff; }
+  .win-btn.close-btn:hover { background: #e05;  color: #fff; }
+  #paintToolbar {
+    background: #ece9d8;
+    border-bottom: 1px solid #aaa;
+    padding: 4px 6px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+  }
+  .pt-label { font-size: 11px; color: #444; font-weight: bold; }
+  .color-swatch {
+    width: 20px; height: 20px;
+    border: 2px solid #888; cursor: pointer;
+  }
+  .color-swatch.active, .color-swatch:hover { border-color: #000; transform: scale(1.2); }
+  .pt-btn {
+    background: #d4d0c8; border: 1px solid #999;
+    padding: 2px 8px; font-size: 11px;
+    cursor: pointer; font-family: inherit;
+  }
+  .pt-btn:hover { background: #c0bdb5; }
+  .pt-btn.active { background: #b0cce0; border-color: #0054a0; }
+  #paintCanvas {
+    display: block;
+    cursor: crosshair;
+    background: #fff;
+  }
+  #paintStatusBar {
+    background: #ece9d8; border-top: 1px solid #aaa;
+    padding: 2px 8px; font-size: 11px; color: #444;
+    display: flex; gap: 20px;
+  }
+  #injectMenu {
+    position: absolute; background: #ece9d8;
+    border: 1px solid #aaa; z-index: 999;
+    display: none; font-family: 'Tahoma', sans-serif;
+    box-shadow: 2px 2px 6px rgba(0,0,0,0.3);
+  }
+  .inject-item {
+    padding: 6px 16px; font-size: 12px;
+    cursor: pointer;
+  }
+  .inject-item:hover { background: #0054a0; color: #fff; }
+  #namePrompt {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none; align-items: center; justify-content: center;
+    z-index: 2000;
+  }
+  .prompt-box {
+    background: #ece9d8;
+    border: 2px solid #0054a0;
+    padding: 16px 20px; width: 280px;
+    font-family: 'Tahoma', sans-serif;
+  }
+  .prompt-box h3 { font-size: 13px; margin-bottom: 10px; }
+  .prompt-box input {
+    width: 100%; padding: 5px;
+    border: 1px solid #888; font-family: inherit;
+    font-size: 13px; margin-bottom: 10px;
+  }
+  .prompt-box .prompt-btns { display: flex; gap: 8px; justify-content: flex-end; }
+  .prompt-box button {
+    background: #d4d0c8; border: 1px solid #888;
+    padding: 4px 16px; cursor: pointer;
+    font-family: inherit; font-size: 12px;
+  }
+  .prompt-box button.ok { background: #0054a0; color: #fff; border-color: #003a80; }
 
-        /* Subseções de Dados */
-        .matrix-sections {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-        .data-block {
-            background: #0d0d0d;
-            border: 1px solid #333;
-            padding: 12px;
-            border-top: 2px solid #ff9900;
-        }
-        .data-block h4 {
-            margin: 0 0 10px 0;
-            color: #ff9900;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 1px dashed #333;
-            padding-bottom: 5px;
-        }
-        
-        .memory-log {
-            background: #000;
-            border: 1px solid #222;
-            padding: 8px;
-            height: 180px;
-            overflow-y: auto;
-            font-size: 12px;
-        }
-        
-        .log-entry { margin-bottom: 8px; border-bottom: 1px solid #1a1a1a; padding-bottom: 4px; }
-        .log-user { color: #888; }
-        .log-ai { color: #00ffff; }
-        .log-meta { color: #ff9900; font-weight: bold; }
-
-        /* Feed e Clãs */
-        .post-card {
-            background: #151515;
-            border-left: 4px solid #ff9900;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-bottom: 1px solid #222;
-        }
-        .post-card .post-meta {
-            font-size: 12px;
-            color: #777;
-            margin-bottom: 5px;
-        }
-        .post-author { font-weight: bold; }
-        .post-body { color: #eee; font-size: 14px; word-break: break-all; }
-
-        .group-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 15px;
-        }
-        .group-card {
-            background: #0a0a0a;
-            border: 1px solid #333;
-            padding: 15px;
-            text-align: center;
-        }
-        .group-card h3 { margin: 0 0 10px 0; color: #ffcc00; }
-
-        .chat-container {
-            background: #000;
-            border: 1px solid #444;
-            height: 300px;
-            overflow-y: auto;
-            padding: 15px;
-            margin-bottom: 10px;
-        }
-        .chat-msg { margin-bottom: 10px; font-size: 13px; }
-        .chat-time { color: #555; font-size: 11px; }
-
-        .edit-profile {
-            background: #111;
-            padding: 20px;
-            border: 1px dashed #555;
-            max-width: 400px;
-        }
-
-        /* --- NOVOS ESTILOS: MULTIPLAYER E PC FAKE --- */
-        .friend-card {
-            background: #151515;
-            border: 1px solid #444;
-            padding: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        #fake-pc-room {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: url('image_0fd018.jpg') no-repeat center center;
-            background-size: cover;
-            z-index: 9999;
-            overflow: hidden;
-        }
-
-        .pc-topbar {
-            background: rgba(0, 0, 0, 0.8);
-            border-bottom: 2px solid #ff9900;
-            padding: 10px;
-            display: flex;
-            justify-content: space-between;
-            color: #ffcc00;
-            font-weight: bold;
-        }
-
-        .multiplayer-cursor {
-            position: absolute;
-            pointer-events: none;
-            z-index: 10000;
-            white-space: nowrap;
-        }
-
-        .room-card {
-            background: #0d0d0d;
-            border: 1px solid #333;
-            border-left: 3px solid #00ff66;
-            padding: 10px 14px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-        }
-        .room-card .room-info { flex: 1; }
-        .room-card .room-name { color: #ffcc00; font-weight: bold; font-size: 13px; }
-        .room-card .room-host { color: #888; font-size: 11px; margin-top: 2px; }
-        .room-card .room-count { color: #00ff66; font-size: 11px; }
-        .room-card button { white-space: nowrap; padding: 6px 14px; font-size: 11px; }
-    </style>
+  /* Connection indicator */
+  #connIndicator {
+    position: absolute; top: 8px; right: 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px; z-index: 600;
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(0,0,0,0.6);
+    padding: 3px 8px; border-radius: 3px;
+    color: #00ff66;
+  }
+  .conn-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #00ff66; animation: blink 1.5s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+  #playerCount {
+    position: absolute; top: 8px; left: 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px; z-index: 600;
+    background: rgba(0,0,0,0.6);
+    padding: 3px 8px; border-radius: 3px;
+    color: #ffcc00;
+  }
+</style>
 </head>
 <body>
 
-<div class="main-wrapper">
-    <div class="header">
-        <h1>SISTEMA OPERACIONAL STICKLAND</h1>
-        <p style="margin:5px 0 0 0; color: #888; font-size: 12px;">Rede Descentralizada de Consciências &amp; Simulador de Cidade Virtual</p>
-    </div>
-
-    <div id="authArea" style="text-align: center;">
-        <button class="google-btn" id="btnGoogle">
-            <svg style="width:18px; height:18px" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35,11.1H12V12.9H19.6C19.2,15 17.5,16.8 15.3,17.5V19.3H19.7C22.3,16.9 23.8,13.3 23.8,9.1C23.8,8.5 23.7,7.9 23.5,7.3H12V9.1H19.7C19.6,9.8 19.3,10.5 18.9,11.1H21.35M12,18C9.3,18 7,16.2 6.1,13.7H1.6V15.5C3.4,19.1 7.1,21.5 11.5,21.5C14.3,21.5 16.9,20.5 18.8,18.8L15.3,16.1C14.2,16.9 12.9,17.4 11.5,17.4C8.9,17.4 6.7,15.7 5.9,13.3H1.4V15.1C2.9,18 5.9,20 9.5,20C10.3,20 11.2,19.9 12,19.7V18M2.2,10.7C2,10.1 1.9,9.5 1.9,8.9C1.9,8.3 2,7.7 2.2,7.1V5.3H0.3C0.1,5.9 0,6.5 0,7.1C0,7.8 0.1,8.4 0.3,9H2.2V10.7M11.5,3.5C13.1,3.5 14.5,4.1 15.6,5.1L18.4,2.3C16.6,0.9 14.3,0 11.5,0C7.1,0 3.4,2.4 1.6,6C1.6,6 1.6,6.1 1.6,6.1L4.1,8.1C4.9,5.5 7.4,3.5 10.5,3.5C10.8,3.5 11.2,3.5 11.5,3.5Z"/></svg>
-            Autenticar Terminal via Google
-        </button>
-    </div>
-
-    <div class="status-bar" id="connectionStatus">
-        [!] CONEXÃO NEURAL: INATIVA - REQUISITA DECODIFICAÇÃO DE CONTA
-    </div>
-
-    <div class="nav-tabs" id="mainNav">
-        <button class="tab-btn active" data-tab="hud">Matrix HUD</button>
-        <button class="tab-btn" data-tab="feed">Feed Global</button>
-        <button class="tab-btn" data-tab="multiplayer">Co-op &amp; Amigos</button>
-        <button class="tab-btn" data-tab="grupos">Clãs da Cidade</button>
-        <button class="tab-btn" data-tab="chat">Chat Online</button>
-        <button class="tab-btn" data-tab="perfil">Meu Perfil</button>
-    </div>
-
-    <div id="tab-hud" class="tab-content active">
-        <h3 style="color: #ff9900; margin-top:0;">[ INTERROGATÓRIO DE CONSCIÊNCIAS ]</h3>
-        <p style="font-size:12px; color:#aaa;">Rastreamento em tempo real de ações, tendências psicológicas e alinhamento urbano na Stickland.</p>
-        <div class="search-box">
-            <input type="text" id="stickmanName" placeholder="Digite o nome ou ID do Stickman para descriptografar...">
-            <button id="btnBuscar">Extrair Dados Nucleares</button>
-        </div>
-        <div id="profilePanel" style="display:none;">
-            <div class="profile-header">
-                <img id="stickAvatar" class="avatar-img" src="" alt="Avatar">
-                <div class="stats-grid">
-                    <div>
-                        <h2 style="margin:0 0 5px 0; color: #00ffff;" id="stickName">NOME</h2>
-                        <p>ID do Registro: <span class="highlight" id="stickUID">#0000</span></p>
-                        <p>Injeção Original: <span class="highlight" id="stickDate">--/--/----</span></p>
-                    </div>
-                    <div>
-                        <p>Status na Cidade: <span id="stickFaction" class="faction-citizen">Cidadão Comum</span></p>
-                        <p>Incursões na Stickland: <span class="highlight" style="color:#ffcc00;" id="stickVisits">0</span></p>
-                        <p>Baixas em Combate: <span class="highlight" style="color:red;" id="stickDeaths">0</span></p>
-                        <p id="stickHistoryRow" style="display:none; font-size:11px;">Ex-Codinomes: <span id="stickHistory" style="color:#aaa;">Nenhum</span></p>
-                    </div>
-                </div>
-            </div>
-            <div class="matrix-sections">
-                <div class="data-block">
-                    <h4>[ Perfil Psicológico &amp; Memória Dinâmica ]</h4>
-                    <div class="memory-log" id="blockCoreData"></div>
-                </div>
-                <div class="data-block">
-                    <h4>[ Histórico de Interações por Voz (Conversas) ]</h4>
-                    <div class="memory-log" id="blockConversations"></div>
-                </div>
-                <div class="data-block">
-                    <h4>[ Conexões Sociais: Amigos &amp; Inimigos ]</h4>
-                    <div class="memory-log" id="blockSocialNet"></div>
-                </div>
-                <div class="data-block">
-                    <h4>[ Atividades de Defesa/Ataque na Cidade ]</h4>
-                    <div class="memory-log" id="blockCombatLog"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="tab-multiplayer" class="tab-content">
-        <h3 style="color: #ff9900; margin-top:0;">[ REDE DE OPERADORES &amp; SALAS CO-OP ]</h3>
-
-        <!-- SALAS PÚBLICAS -->
-        <div class="data-block" style="margin-bottom: 20px;">
-            <h4>🖥️ Salas Co-op Públicas</h4>
-            <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
-                <input type="text" id="roomNameInput" placeholder="Nome da sua sala (ex: Batalha do Bob)..." style="flex:1; min-width:180px;">
-                <button id="btnCriarSala" style="background:#00ff66; color:#000; white-space:nowrap;">+ Criar Sala</button>
-            </div>
-            <div id="roomListContainer">
-                <p style="color:#666; font-size:12px;">Buscando salas ativas na Matrix...</p>
-            </div>
-        </div>
-
-        <!-- AMIGOS E SOLICITAÇÕES -->
-        <div class="matrix-sections" style="grid-template-columns: 1fr 1fr; margin-bottom: 20px;">
-            <div class="data-block">
-                <h4>👥 Seus Amigos Conectados</h4>
-                <div id="friendsListContainer">
-                    <p style="color:#666; font-size:12px;">Nenhum amigo adicionado ainda.</p>
-                </div>
-            </div>
-            <div class="data-block">
-                <h4>📨 Solicitações Pendentes</h4>
-                <div id="friendRequestsContainer">
-                    <p style="color:#666; font-size:12px;">Nenhuma solicitação.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- BUSCA DE OPERADORES -->
-        <div class="data-block">
-            <h4>🔍 Pesquisar Operadores</h4>
-            <div class="search-box" style="margin-bottom: 0;">
-                <input type="text" id="searchUserStr" placeholder="Nome do operador para adicionar...">
-                <button id="btnSearchUser">Procurar</button>
-            </div>
-            <div id="userSearchResults" style="margin-top: 10px;"></div>
-        </div>
-    </div>
-
-    <div id="tab-feed" class="tab-content">
-        <h3 style="color: #ff9900; margin-top:0;">[ MURAL DE POSTAGENS ]</h3>
-        <div style="background:#111; padding:15px; border:1px solid #333; margin-bottom:20px;">
-            <p style="margin:0 0 10px 0; font-size:12px;">O que está acontecendo na Stickland agora?</p>
-            <div style="display:flex; gap:10px;">
-                <textarea id="postText" placeholder="Compartilhe bugs, recordes ou logs de IA..." rows="2" style="background:#050505; color:#fff; font-family:inherit; padding:8px; border:1px solid #444; flex:1; resize:none;"></textarea>
-                <button id="btnPostar" style="height:fit-content; align-self:center;">Publicar</button>
-            </div>
-        </div>
-        <div id="feedContainer"><p style="color:#666;">Carregando updates da Matrix...</p></div>
-    </div>
-
-    <div id="tab-grupos" class="tab-content">
-        <h3 style="color: #ff9900; margin-top:0;">[ CLÃS E FACÇÕES DEFENSORAS/INVASORAS ]</h3>
-        <div class="group-grid">
-            <div class="group-card" style="border-top: 2px solid #00ff66;">
-                <h3 style="color:#00ff66;">Protetores da Cidade</h3>
-                <p style="font-size:12px; color:#aaa;">Heróis dedicados a impedir ataques e manter o sandbox estável.</p>
-                <button onclick="alert('Defendendo o perímetro!')" style="padding:5px 10px; font-size:11px; background:#00ff66;">Alistar-se</button>
-            </div>
-            <div class="group-card" style="border-top: 2px solid #ff3333;">
-                <h3 style="color:#ff3333;">Sindicato do Caos</h3>
-                <p style="font-size:12px; color:#aaa;">Vilões que buscam sabotar, travar e destruir distritos e janelas.</p>
-                <button onclick="alert('O caos começou...')" style="padding:5px 10px; font-size:11px; background:#ff3333; color:#fff;">Unir-se à Invasão</button>
-            </div>
-            <div class="group-card" style="border-top: 2px solid #ff9900;">
-                <h3>Fundação SCP</h3>
-                <p style="font-size:12px; color:#aaa;">Estudos e contenção de anomalias infiltradas no desktop.</p>
-                <button onclick="alert('Contido. Protegido.')" style="padding:5px 10px; font-size:11px;">Entrar</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="tab-chat" class="tab-content">
-        <h3 style="color: #ff9900; margin-top:0;">[ CANAL COLETIVO DE TERMINAIS ]</h3>
-        <div class="chat-container" id="chatWindow"></div>
-        <div class="chat-box">
-            <input type="text" id="chatMessage" placeholder="Transmita uma mensagem para a rede...">
-            <button id="btnEnviarChat">Enviar</button>
-        </div>
-    </div>
-
-    <div id="tab-perfil" class="tab-content">
-        <h3 style="color: #ff9900; margin-top:0;">[ IDENTIDADE VIRTUAL ]</h3>
-        <div class="edit-profile">
-            <label style="font-size:12px; display:block; margin-bottom:5px;">Apelido de Rede:</label>
-            <input type="text" id="profileName" style="margin-bottom:15px; width:-webkit-fill-available;"><br>
-            <label style="font-size:12px; display:block; margin-bottom:5px;">Cor do seu Codinome:</label>
-            <select id="profileColor" style="margin-bottom:20px; width:100%; background:#0a0a0a; color:#fff; padding:10px; border:1px solid #444;">
-                <option value="#00ffff" style="color:#00ffff;">Ciano Hacker</option>
-                <option value="#ff9900" style="color:#ff9900;">Laranja Retro</option>
-                <option value="#ff00ff" style="color:#ff00ff;">Neon Magenta</option>
-                <option value="#00ff66" style="color:#00ff66;">Verde Ácido</option>
-            </select>
-            <button id="btnSalvarPerfil">Gravar Alterações</button>
-        </div>
-    </div>
+<!-- ═══════════════════ LOBBY ═══════════════════ -->
+<div id="lobbyScreen">
+  <h1>🖥️ Stickman Desktop</h1>
+  <p class="sub">Multiplayer · Roda no Navegador · Sem instalação</p>
+  <div class="lobby-box">
+    <label>Seu apelido</label>
+    <input type="text" id="inputNick" placeholder="Ex: Zezão_2000" maxlength="20">
+    <label>Código da sala (crie ou entre em uma)</label>
+    <input type="text" id="inputRoom" placeholder="Ex: sala123" maxlength="20">
+    <div id="playerList"></div>
+    <div id="lobbyStatus">Digite seu nick e um código de sala.</div>
+    <button class="btn-main" id="btnJoin">Entrar na Sala</button>
+    <button class="btn-main red" id="btnStart">▶ Iniciar Agora (sem esperar)</button>
+  </div>
 </div>
 
-<div id="fake-pc-room">
-    <div class="pc-topbar">
-        <span id="roomTitle">[SALA] Desktop de Ninguém</span>
-        <button id="btnSairSala" style="padding: 5px 10px; font-size: 11px; background: #ff3333; color: white;">Desconectar</button>
+<!-- ═══════════════════ DESKTOP ═══════════════════ -->
+<div id="desktop">
+  <div id="desktopBg"></div>
+  <div id="connIndicator"><div class="conn-dot"></div><span id="connText">online</span></div>
+  <div id="playerCount">👥 <span id="pcCount">1</span> jogador(es)</div>
+  <!-- Cursors & entities rendered here -->
+  <div id="myCursor">
+    <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="2,2 2,16 6,12 9,18 11,17 8,11 14,11" fill="white" stroke="black" stroke-width="1"/>
+    </svg>
+  </div>
+
+  <!-- Paint Window -->
+  <div id="paintWindow">
+    <div class="win-titlebar" id="paintTitlebar">
+      <span>🎨 Estúdio de Criação Paint</span>
+      <div class="win-controls">
+        <div class="win-btn">_</div>
+        <div class="win-btn">□</div>
+        <div class="win-btn close-btn" id="btnClosePaint">✕</div>
+      </div>
     </div>
-    
-    <div id="multiplayer-canvas" style="position: relative; width: 100%; height: calc(100vh - 40px);">
-        <div id="roomStickmans"></div>
+    <div id="paintToolbar">
+      <span class="pt-label">Cor:</span>
+      <div class="color-swatch active" style="background:#000" data-color="black" title="Preto"></div>
+      <div class="color-swatch" style="background:#f00" data-color="red" title="Vermelho"></div>
+      <div class="color-swatch" style="background:#00f" data-color="blue" title="Azul"></div>
+      <div class="color-swatch" style="background:#0a0" data-color="green" title="Verde"></div>
+      <div class="color-swatch" style="background:#f80" data-color="orange" title="Laranja"></div>
+      <div class="color-swatch" style="background:#a0f" data-color="purple" title="Roxo"></div>
+      <div class="color-swatch" style="background:#0ff" data-color="cyan" title="Ciano"></div>
+      <div class="color-swatch" style="background:#ff0" data-color="yellow" title="Amarelo"></div>
+      <span class="pt-label" style="margin-left:6px">Forma:</span>
+      <button class="pt-btn active" data-tool="pencil">✏️ Livre</button>
+      <button class="pt-btn" data-tool="rect">⬜ Retâng.</button>
+      <button class="pt-btn" data-tool="oval">⭕ Círc.</button>
+      <button class="pt-btn" data-tool="line">╱ Linha</button>
+      <span class="pt-label" style="margin-left:6px">Pincel:</span>
+      <button class="pt-btn" data-size="2">Fino</button>
+      <button class="pt-btn active" data-size="6">Médio</button>
+      <button class="pt-btn" data-size="14">Grosso</button>
+      <button class="pt-btn" style="margin-left:10px; background:#fcc;" id="btnClearPaint">🗑 Limpar</button>
     </div>
+    <canvas id="paintCanvas" width="556" height="380"></canvas>
+    <div id="paintStatusBar">
+      <span>Clique direito para injetar no Desktop</span>
+      <span id="paintCoords">x:0, y:0</span>
+    </div>
+  </div>
+
+  <!-- Right-click inject menu -->
+  <div id="injectMenu">
+    <div class="inject-item" data-action="stickman">✨ Injetar como Stickman Vivo</div>
+    <div class="inject-item" data-action="weapon">⚔️ Equipar como Arma Física</div>
+    <div class="inject-item" data-action="barrier">🧱 Fixar como Barreira Sólida</div>
+  </div>
+
+  <!-- Name prompt -->
+  <div id="namePrompt">
+    <div class="prompt-box">
+      <h3>Nome do Stickman</h3>
+      <input type="text" id="stickNameInput" placeholder="Ex: Bob, GodSlayer, Zé...">
+      <div class="prompt-btns">
+        <button id="btnNameCancel">Cancelar</button>
+        <button class="ok" id="btnNameOk">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Taskbar -->
+  <div id="taskbar">
+    <button id="startBtn">
+      <svg width="14" height="14" viewBox="0 0 14 14"><rect width="6" height="6" fill="#f00"/><rect x="8" width="6" height="6" fill="#0f0"/><rect y="8" width="6" height="6" fill="#00f"/><rect x="8" y="8" width="6" height="6" fill="#ff0"/></svg>
+      Iniciar
+    </button>
+    <button class="taskbar-btn" id="btnOpenPaint">🎨 Paint Studio</button>
+    <div id="taskbarTime">00:00</div>
+  </div>
 </div>
 
-<!-- =====================================================
-     ATENÇÃO: Substitua as credenciais abaixo pelas suas
-     do Console do Firebase antes de publicar!
-     ===================================================== -->
+<!-- ═══════════════════ FIREBASE + LÓGICA ═══════════════════ -->
 <script type="module">
-    // ── IMPORTS COMPLETOS DO FIREBASE ──────────────────────────────────────────
-    import { initializeApp }         from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth,
-             GoogleAuthProvider,
-             signInWithPopup,
-             onAuthStateChanged }    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getDatabase,
-             ref,
-             child,
-             get,
-             set,
-             update,
-             remove,
-             push,
-             onValue }              from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-    // ───────────────────────────────────────────────────────────────────────────
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, set, update, get, onValue, remove, push, off }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-    // ── CONFIGURAÇÃO DO FIREBASE ───────────────────────────────────────────────
-    // Substitua os valores abaixo pelos do seu projeto no Firebase Console
-    const firebaseConfig = {
-        apiKey:            "AIzaSyA2hBfWW0bTd-N9ky95AJEweP6SyNMogyY",
-        authDomain:        "stickland-3ccaa.firebaseapp.com",
-        databaseURL:       "https://stickland-3ccaa-default-rtdb.firebaseio.com",
-        projectId:         "stickland-3ccaa",
-        storageBucket:     "stickland-3ccaa.appspot.com",
-        messagingSenderId: "285348004391",
-        appId:             "1:285348004391:web:0c00837f0f387961da0402"
+// ── Firebase config (projeto original do usuário) ──────────────────────────
+const firebaseConfig = {
+  apiKey:            "AIzaSyA2hBfWW0bTd-N9ky95AJEweP6SyNMogyY",
+  authDomain:        "stickland-3ccaa.firebaseapp.com",
+  databaseURL:       "https://stickland-3ccaa-default-rtdb.firebaseio.com",
+  projectId:         "stickland-3ccaa",
+  storageBucket:     "stickland-3ccaa.appspot.com",
+  messagingSenderId: "285348004391",
+  appId:             "1:285348004391:web:0c00837f0f387961da0402"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+// ── Estado local ────────────────────────────────────────────────────────────
+const MAX_PLAYERS = 4;
+let myId    = 'p_' + Math.random().toString(36).slice(2,9);
+let myNick  = '';
+let roomId  = '';
+let roomRef = null;
+let inDesktop = false;
+
+// cursors: uid -> {el, label}
+const remoteCursors  = {};
+// stickmans: id -> {data, el, canvas, hpBar, animFrame, vx,vy,x,y,tx,ty, dragging}
+const stickmans = {};
+// barriers/weapons as static DOM items
+const staticItems = {};
+
+// ═══════════════════ LOBBY ═══════════════════════════════════════════════════
+document.getElementById('btnJoin').addEventListener('click', joinRoom);
+document.getElementById('btnStart').addEventListener('click', () => {
+  if (!validateLobby()) return;
+  startDesktop();
+});
+document.getElementById('inputRoom').addEventListener('keydown', e => {
+  if (e.key === 'Enter') joinRoom();
+});
+
+function validateLobby() {
+  myNick = document.getElementById('inputNick').value.trim();
+  roomId = document.getElementById('inputRoom').value.trim().replace(/\s/g,'');
+  if (!myNick) { setLobbyStatus('⚠ Digite seu apelido.'); return false; }
+  if (!roomId) { setLobbyStatus('⚠ Digite um código de sala.'); return false; }
+  return true;
+}
+
+async function joinRoom() {
+  if (!validateLobby()) return;
+  setLobbyStatus('Conectando...');
+  roomRef = ref(db, `desktopRooms/${roomId}`);
+  // Register self
+  await set(ref(db, `desktopRooms/${roomId}/players/${myId}`), {
+    nick: myNick, joinedAt: Date.now(), active: true
+  });
+  // Listen for players
+  onValue(ref(db, `desktopRooms/${roomId}/players`), snap => {
+    if (!snap.exists()) return;
+    const players = snap.val();
+    const list = Object.values(players).filter(p => p.active);
+    renderLobbyPlayers(list);
+    setLobbyStatus(`${list.length}/${MAX_PLAYERS} jogador(es) na sala. Aguardando...`);
+    // Auto-start when full
+    if (list.length >= MAX_PLAYERS && !inDesktop) startDesktop();
+    // Check if room started
+    get(ref(db, `desktopRooms/${roomId}/started`)).then(s => {
+      if (s.exists() && s.val() === true && !inDesktop) startDesktop();
+    });
+  });
+  // Listen for start signal
+  onValue(ref(db, `desktopRooms/${roomId}/started`), snap => {
+    if (snap.exists() && snap.val() === true && !inDesktop) startDesktop();
+  });
+}
+
+function renderLobbyPlayers(list) {
+  const el = document.getElementById('playerList');
+  el.innerHTML = list.map((p,i) =>
+    `<div class="player-entry${p.nick===myNick?' me':''}">${i===0?'👑 ':'👤 '}${p.nick}</div>`
+  ).join('');
+}
+
+function setLobbyStatus(msg) {
+  document.getElementById('lobbyStatus').textContent = msg;
+}
+
+// ═══════════════════ START DESKTOP ══════════════════════════════════════════
+async function startDesktop() {
+  if (inDesktop) return;
+  inDesktop = true;
+  // Signal room started
+  if (roomRef) await update(roomRef, { started: true });
+  document.getElementById('lobbyScreen').style.display = 'none';
+  document.getElementById('desktop').style.display = 'block';
+  initDesktop();
+}
+
+// ═══════════════════ DESKTOP INIT ═══════════════════════════════════════════
+function initDesktop() {
+  setupClock();
+  setupCursorTracking();
+  setupRemoteCursors();
+  setupPaint();
+  setupStickmanSync();
+  setupPlayerCount();
+  // Remove player on close
+  window.addEventListener('beforeunload', () => {
+    if (roomRef) set(ref(db, `desktopRooms/${roomId}/players/${myId}/active`), false);
+    set(ref(db, `desktopRooms/${roomId}/cursors/${myId}`), null);
+  });
+}
+
+// ── Clock ──────────────────────────────────────────────────────────────────
+function setupClock() {
+  const el = document.getElementById('taskbarTime');
+  function tick() {
+    const d = new Date();
+    el.textContent = d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  }
+  tick(); setInterval(tick, 10000);
+}
+
+// ── Own cursor ─────────────────────────────────────────────────────────────
+function setupCursorTracking() {
+  const cur = document.getElementById('myCursor');
+  const desktop = document.getElementById('desktop');
+  desktop.addEventListener('mousemove', e => {
+    cur.style.left = e.clientX + 'px';
+    cur.style.top  = e.clientY + 'px';
+    if (roomRef) {
+      const pctX = (e.clientX / window.innerWidth)  * 100;
+      const pctY = (e.clientY / window.innerHeight) * 100;
+      update(ref(db, `desktopRooms/${roomId}/cursors/${myId}`), {
+        x: pctX, y: pctY, nick: myNick, t: Date.now()
+      });
+    }
+  });
+}
+
+// ── Remote cursors ─────────────────────────────────────────────────────────
+// Cursor SVG (image 2 style - white arrow on transparent)
+function cursorSVG() {
+  return `<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="2,2 2,16 6,12 9,18 11,17 8,11 14,11" fill="white" stroke="black" stroke-width="1"/>
+  </svg>`;
+}
+
+function setupRemoteCursors() {
+  onValue(ref(db, `desktopRooms/${roomId}/cursors`), snap => {
+    if (!snap.exists()) return;
+    const data = snap.val() || {};
+    // Remove stale
+    Object.keys(remoteCursors).forEach(uid => {
+      if (!data[uid]) { remoteCursors[uid].el.remove(); delete remoteCursors[uid]; }
+    });
+    Object.entries(data).forEach(([uid, cur]) => {
+      if (uid === myId) return;
+      if (Date.now() - cur.t > 12000) return;
+      const x = (cur.x / 100) * window.innerWidth;
+      const y = (cur.y / 100) * window.innerHeight;
+      if (!remoteCursors[uid]) {
+        const el = document.createElement('div');
+        el.className = 'remote-cursor';
+        el.innerHTML = cursorSVG() + `<div class="remote-cursor-label">${cur.nick}</div>`;
+        document.getElementById('desktop').appendChild(el);
+        remoteCursors[uid] = { el };
+      }
+      remoteCursors[uid].el.style.left = x + 'px';
+      remoteCursors[uid].el.style.top  = y + 'px';
+    });
+  });
+}
+
+// ── Player count ──────────────────────────────────────────────────────────
+function setupPlayerCount() {
+  onValue(ref(db, `desktopRooms/${roomId}/players`), snap => {
+    if (!snap.exists()) return;
+    const active = Object.values(snap.val()).filter(p => p.active).length;
+    document.getElementById('pcCount').textContent = active;
+  });
+}
+
+// ═══════════════════ PAINT STUDIO ═══════════════════════════════════════════
+let paintState = {
+  color: 'black', tool: 'pencil', size: 6,
+  drawing: false, sx: 0, sy: 0, lx: 0, ly: 0
+};
+let pendingAction = null;
+let paintInjectTarget = null;
+
+function setupPaint() {
+  const win   = document.getElementById('paintWindow');
+  const cnv   = document.getElementById('paintCanvas');
+  const ctx   = cnv.getContext('2d');
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+  // Open/close
+  document.getElementById('btnOpenPaint').addEventListener('click', () => {
+    win.style.display = win.style.display === 'none' ? 'block' : 'none';
+  });
+  document.getElementById('btnClosePaint').addEventListener('click', () => {
+    win.style.display = 'none';
+  });
+
+  // Drag titlebar
+  makeDraggable(win, document.getElementById('paintTitlebar'));
+
+  // Toolbar
+  document.querySelectorAll('.color-swatch').forEach(s => {
+    s.addEventListener('click', () => {
+      document.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('active'));
+      s.classList.add('active');
+      paintState.color = s.dataset.color;
+    });
+  });
+  document.querySelectorAll('[data-tool]').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('[data-tool]').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      paintState.tool = b.dataset.tool;
+    });
+  });
+  document.querySelectorAll('[data-size]').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('[data-size]').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      paintState.size = parseInt(b.dataset.size);
+    });
+  });
+  document.getElementById('btnClearPaint').addEventListener('click', () => {
+    ctx.clearRect(0, 0, cnv.width, cnv.height);
+  });
+
+  // Drawing
+  cnv.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    paintState.drawing = true;
+    const {x,y} = cnvPos(e, cnv);
+    paintState.sx = paintState.lx = x;
+    paintState.sy = paintState.ly = y;
+    ctx.strokeStyle = paintState.color;
+    ctx.lineWidth   = paintState.size;
+    ctx.beginPath(); ctx.moveTo(x, y);
+  });
+  cnv.addEventListener('mousemove', e => {
+    const {x,y} = cnvPos(e, cnv);
+    document.getElementById('paintCoords').textContent = `x:${x}, y:${y}`;
+    if (!paintState.drawing) return;
+    if (paintState.tool === 'pencil') {
+      ctx.lineTo(x, y); ctx.stroke();
+      paintState.lx = x; paintState.ly = y;
+    } else {
+      // Preview shape on overlay
+      renderShapePreview(ctx, cnv, x, y);
+    }
+  });
+  cnv.addEventListener('mouseup', e => {
+    if (!paintState.drawing) return;
+    paintState.drawing = false;
+    const {x,y} = cnvPos(e, cnv);
+    if (paintState.tool !== 'pencil') {
+      finalizeShape(ctx, paintState.sx, paintState.sy, x, y);
+    }
+    ctx.beginPath();
+    // Sync paint to room
+    syncPaintToRoom(cnv);
+  });
+  cnv.addEventListener('mouseleave', () => {
+    if (paintState.drawing) { paintState.drawing = false; syncPaintToRoom(cnv); }
+  });
+  cnv.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    paintInjectTarget = cnv;
+    const menu = document.getElementById('injectMenu');
+    menu.style.display  = 'block';
+    menu.style.left = e.pageX + 'px';
+    menu.style.top  = e.pageY + 'px';
+  });
+
+  // Inject menu
+  document.querySelectorAll('.inject-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const action = item.dataset.action;
+      document.getElementById('injectMenu').style.display = 'none';
+      if (action === 'stickman') {
+        pendingAction = 'stickman';
+        document.getElementById('stickNameInput').value = '';
+        document.getElementById('namePrompt').style.display = 'flex';
+      } else {
+        injectItem(action, null, cnv);
+      }
+    });
+  });
+  document.getElementById('btnNameOk').addEventListener('click', () => {
+    const name = document.getElementById('stickNameInput').value.trim();
+    document.getElementById('namePrompt').style.display = 'none';
+    if (name) injectItem('stickman', name, paintInjectTarget);
+  });
+  document.getElementById('btnNameCancel').addEventListener('click', () => {
+    document.getElementById('namePrompt').style.display = 'none';
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#injectMenu') && !e.target.closest('#paintCanvas'))
+      document.getElementById('injectMenu').style.display = 'none';
+  });
+
+  // Listen to remote paint state
+  onValue(ref(db, `desktopRooms/${roomId}/paintCanvas`), snap => {
+    if (!snap.exists()) return;
+    const d = snap.val();
+    if (d.author === myId) return; // don't reapply own
+    const img = new Image();
+    img.onload = () => { ctx.clearRect(0,0,cnv.width,cnv.height); ctx.drawImage(img,0,0); };
+    img.src = d.dataUrl;
+  });
+}
+
+let paintSyncTimer = null;
+function syncPaintToRoom(cnv) {
+  if (!roomRef) return;
+  clearTimeout(paintSyncTimer);
+  paintSyncTimer = setTimeout(() => {
+    const dataUrl = cnv.toDataURL('image/png');
+    set(ref(db, `desktopRooms/${roomId}/paintCanvas`), { dataUrl, author: myId, t: Date.now() });
+  }, 200);
+}
+
+function cnvPos(e, cnv) {
+  const r = cnv.getBoundingClientRect();
+  return { x: Math.round(e.clientX - r.left), y: Math.round(e.clientY - r.top) };
+}
+
+// Shape helpers
+let shapeSnapshot = null;
+function renderShapePreview(ctx, cnv, ex, ey) {
+  if (!shapeSnapshot) shapeSnapshot = ctx.getImageData(0, 0, cnv.width, cnv.height);
+  ctx.putImageData(shapeSnapshot, 0, 0);
+  ctx.strokeStyle = paintState.color;
+  ctx.lineWidth   = paintState.size;
+  ctx.beginPath();
+  drawShape(ctx, paintState.tool, paintState.sx, paintState.sy, ex, ey);
+  ctx.stroke();
+}
+function finalizeShape(ctx, sx, sy, ex, ey) {
+  shapeSnapshot = null;
+  ctx.strokeStyle = paintState.color;
+  ctx.lineWidth   = paintState.size;
+  ctx.beginPath();
+  drawShape(ctx, paintState.tool, sx, sy, ex, ey);
+  ctx.stroke();
+}
+function drawShape(ctx, tool, sx, sy, ex, ey) {
+  if (tool === 'rect') {
+    ctx.rect(sx, sy, ex-sx, ey-sy);
+  } else if (tool === 'oval') {
+    const rx = Math.abs(ex-sx)/2, ry = Math.abs(ey-sy)/2;
+    ctx.ellipse(sx+(ex-sx)/2, sy+(ey-sy)/2, rx||1, ry||1, 0, 0, Math.PI*2);
+  } else if (tool === 'line') {
+    ctx.moveTo(sx, sy); ctx.lineTo(ex, ey);
+  }
+}
+
+// ── Inject item to desktop ─────────────────────────────────────────────────
+function injectItem(action, name, cnv) {
+  const dataUrl = cnv ? cnv.toDataURL('image/png') : null;
+  const bbox    = cnv ? getImageBBox(cnv) : {x:0,y:0,w:100,h:100};
+  const id      = 'item_' + Date.now() + '_' + Math.random().toString(36).slice(2,5);
+  const x = 100 + Math.random() * (window.innerWidth  - 300);
+  const y = 80  + Math.random() * (window.innerHeight - 250);
+
+  const payload = {
+    id, action, name: name || null,
+    dataUrl,
+    x, y,
+    w: bbox.w || 100, h: bbox.h || 100,
+    creator: myNick,
+    hp: computeHP(name || ''),
+    maxHp: computeHP(name || ''),
+    t: Date.now()
+  };
+
+  push(ref(db, `desktopRooms/${roomId}/items`), payload);
+  // Clear paint after inject
+  const paintCnv = document.getElementById('paintCanvas');
+  paintCnv.getContext('2d').clearRect(0,0,paintCnv.width,paintCnv.height);
+  syncPaintToRoom(paintCnv);
+}
+
+function getImageBBox(cnv) {
+  const ctx  = cnv.getContext('2d');
+  const data = ctx.getImageData(0,0,cnv.width,cnv.height).data;
+  let minX=cnv.width,minY=cnv.height,maxX=0,maxY=0,found=false;
+  for (let y=0;y<cnv.height;y++) for (let x=0;x<cnv.width;x++) {
+    if (data[(y*cnv.width+x)*4+3] > 10) {
+      if (x<minX)minX=x; if (x>maxX)maxX=x;
+      if (y<minY)minY=y; if (y>maxY)maxY=y;
+      found=true;
+    }
+  }
+  if (!found) return {x:0,y:0,w:80,h:80};
+  return {x:minX, y:minY, w:Math.max(maxX-minX,40), h:Math.max(maxY-minY,40)};
+}
+
+function computeHP(name) {
+  const n = name.toLowerCase();
+  const godWords = ['god','deus','overlord','void','boss','dark','hacker','evil','chaos','supremo','destrutor'];
+  const weakWords = ['bob','zé','zezinho','pacifico','common','stick'];
+  if (godWords.some(w => n.includes(w))) return 200 + Math.floor(Math.random()*300);
+  if (weakWords.some(w => n.includes(w))) return 20  + Math.floor(Math.random()*30);
+  return 60 + Math.floor(Math.random()*90);
+}
+
+// ═══════════════════ STICKMAN SYNC (REALTIME) ═══════════════════════════════
+function setupStickmanSync() {
+  onValue(ref(db, `desktopRooms/${roomId}/items`), snap => {
+    if (!snap.exists()) { clearAllItems(); return; }
+    const all = snap.val();
+    const ids = Object.keys(all);
+
+    // Remove gone
+    Object.keys(stickmans).forEach(id => {
+      if (!ids.includes(id)) { removeStickmanEl(id); }
+    });
+    Object.keys(staticItems).forEach(id => {
+      if (!ids.includes(id)) { staticItems[id].remove(); delete staticItems[id]; }
+    });
+
+    ids.forEach(id => {
+      const item = all[id];
+      if (item.action === 'stickman') {
+        if (!stickmans[id]) createStickman(id, item);
+        else updateStickman(id, item);
+      } else {
+        if (!staticItems[id]) createStaticItem(id, item);
+      }
+    });
+  });
+}
+
+function clearAllItems() {
+  Object.keys(stickmans).forEach(id => removeStickmanEl(id));
+  Object.keys(staticItems).forEach(id => { staticItems[id].remove(); delete staticItems[id]; });
+}
+
+// ── Static item (barrier / weapon) ────────────────────────────────────────
+function createStaticItem(id, item) {
+  const el = document.createElement('div');
+  el.style.cssText = `position:absolute;left:${item.x}px;top:${item.y}px;
+    width:${item.w}px;height:${item.h}px;z-index:300;cursor:move;
+    border:2px solid ${item.action==='barrier'?'#888':'#f60'};
+    background:${item.action==='barrier'?'rgba(80,60,40,0.7)':'rgba(200,60,0,0.5)'};
+    display:flex;align-items:center;justify-content:center;
+    font-size:20px;user-select:none;`;
+  el.textContent = item.action === 'barrier' ? '🧱' : '⚔️';
+  if (item.dataUrl) {
+    const img = document.createElement('img');
+    img.src = item.dataUrl;
+    img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;';
+    el.innerHTML = ''; el.appendChild(img);
+  }
+  makeDraggableDesktop(el, id, 'static');
+  document.getElementById('desktop').appendChild(el);
+  staticItems[id] = el;
+}
+
+// ── Stickman ───────────────────────────────────────────────────────────────
+function createStickman(id, data) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'stickman-entity';
+  wrapper.id = 'sm_' + id;
+  wrapper.style.left = data.x + 'px';
+  wrapper.style.top  = data.y + 'px';
+  wrapper.style.width = '80px';
+
+  // Nametag
+  const tag = document.createElement('div');
+  tag.className = 'stickman-nametag';
+  tag.textContent = data.name || 'Stickman';
+
+  // Canvas where we draw the stickman
+  const cnv = document.createElement('canvas');
+  cnv.className = 'stickman-canvas';
+  cnv.width  = 80; cnv.height = 100;
+  drawStickmanFrame(cnv.getContext('2d'), data, 0);
+
+  // HP bar
+  const hpWrap = document.createElement('div');
+  hpWrap.className = 'stickman-hp-wrap';
+  const hpBar  = document.createElement('div');
+  hpBar.className = 'stickman-hp-bar';
+  hpBar.style.width = '100%';
+  const hpColor = getHpColor(data.name);
+  hpBar.style.background = hpColor;
+  hpWrap.appendChild(hpBar);
+
+  wrapper.appendChild(tag);
+  wrapper.appendChild(cnv);
+  wrapper.appendChild(hpWrap);
+
+  // Draggable by owner or anyone
+  makeDraggableDesktop(wrapper, id, 'stickman');
+
+  document.getElementById('desktop').appendChild(wrapper);
+
+  // Animate
+  let frame = 0, vx = (Math.random()-0.5)*2, vy = 0;
+  let tx = data.x, ty = data.y;
+  let moving = false;
+
+  const sm = { el: wrapper, cnv, hpBar, vx, vy, x: data.x, y: data.y, tx, ty, moving, frame, data };
+  stickmans[id] = sm;
+
+  // Start AI-like autonomous movement
+  startStickmanAI(id);
+}
+
+function getHpColor(name) {
+  const n = (name||'').toLowerCase();
+  if (['god','deus','overlord','boss','evil','dark'].some(w=>n.includes(w))) return '#ff00ff';
+  if (['kill','hostile','pvp'].some(w=>n.includes(w))) return '#ff3333';
+  if (['chaos','crazy'].some(w=>n.includes(w))) return '#ffaa00';
+  return '#00ff66';
+}
+
+function updateStickman(id, data) {
+  const sm = stickmans[id];
+  if (!sm) return;
+  // Sync position from DB (smooth)
+  sm.data = data;
+  const hpPct = (data.hp / data.maxHp) * 100;
+  sm.hpBar.style.width = hpPct + '%';
+  if (hpPct < 30) sm.hpBar.style.background = '#f33';
+  else if (hpPct < 60) sm.hpBar.style.background = '#fa0';
+}
+
+function removeStickmanEl(id) {
+  if (stickmans[id]) {
+    cancelAnimationFrame(stickmans[id].raf);
+    stickmans[id].el.remove();
+    delete stickmans[id];
+  }
+}
+
+// Stickman drawing (programmatic, no image needed)
+function drawStickmanFrame(ctx, data, frame) {
+  ctx.clearRect(0, 0, 80, 100);
+  const color = data.action === 'stickman' ? '#222' : '#666';
+  const legOff = Math.sin(frame * 0.2) * 8;
+  const armOff = Math.cos(frame * 0.2) * 7;
+  const bodyBob = Math.abs(Math.sin(frame * 0.2)) * 3;
+
+  ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+
+  // Use custom image if available, else draw stick figure
+  if (data.dataUrl && !data._imgLoaded) {
+    const img = new Image();
+    img.onload = () => {
+      data._img = img; data._imgLoaded = true;
     };
-    // ───────────────────────────────────────────────────────────────────────────
+    img.src = data.dataUrl;
+    data._imgLoaded = 'loading';
+  }
 
-    // ── INICIALIZAÇÃO ──────────────────────────────────────────────────────────
-    const app      = initializeApp(firebaseConfig);
-    const auth     = getAuth(app);
-    const db       = getDatabase(app);
-    const provider = new GoogleAuthProvider();
+  if (data._img) {
+    ctx.drawImage(data._img, 5, 10, 70, 85);
+    return;
+  }
 
-    let currentUser     = null;
-    let currentRoomRef  = null;
+  const cx = 40, cy = 20 + bodyBob;
+  // Head
+  ctx.beginPath(); ctx.arc(cx, cy, 10, 0, Math.PI*2); ctx.stroke();
+  // Body
+  ctx.beginPath(); ctx.moveTo(cx, cy+10); ctx.lineTo(cx, cy+40); ctx.stroke();
+  // Arms
+  ctx.beginPath(); ctx.moveTo(cx-18, cy+20+armOff); ctx.lineTo(cx, cy+20); ctx.lineTo(cx+18, cy+20-armOff); ctx.stroke();
+  // Legs
+  ctx.beginPath(); ctx.moveTo(cx, cy+40); ctx.lineTo(cx-15, cy+65+legOff); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, cy+40); ctx.lineTo(cx+15, cy+65-legOff); ctx.stroke();
+}
 
-    // ── SISTEMA DE ABAS ────────────────────────────────────────────────────────
-    const tabs     = document.querySelectorAll('.tab-btn');
-    const contents = document.querySelectorAll('.tab-content');
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            contents.forEach(c => c.classList.remove('active'));
-            tab.classList.add('active');
-            document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
-        });
-    });
+// Autonomous movement & AI behavior
+function startStickmanAI(id) {
+  const W = window.innerWidth;
+  const H = window.innerHeight - 36;
+  let frame = 0;
+  let moveTimer = 0;
+  let vx = 0, vy = 0;
+  let tx = 0, ty = 0;
+  let jumping = false;
+  const GRAVITY = 0.5;
+  const GROUND  = H - 100; // approx ground
 
-    // ── AUTENTICAÇÃO E LOGIN ───────────────────────────────────────────────────
-    document.getElementById('btnGoogle').addEventListener('click', () => {
-        signInWithPopup(auth, provider).catch(err => console.error("Erro login:", err));
-    });
+  function tick() {
+    const sm = stickmans[id];
+    if (!sm) return;
 
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            currentUser = user;
-            document.getElementById('authArea').style.display = 'none';
-            document.getElementById('mainNav').style.display  = 'flex';
+    const el  = sm.el;
+    let x = parseFloat(el.style.left);
+    let y = parseFloat(el.style.top);
 
-            const statusBox = document.getElementById('connectionStatus');
-            statusBox.style.color = "#00ff66";
-            statusBox.innerText   = `[+] TERMINAL ATIVO: OPERADOR CONECTADO COMO ${user.displayName.toUpperCase()}`;
+    frame++;
 
-            // Registrar ou verificar perfil na Matrix
-            const userRef  = ref(db, `users/${user.uid}`);
-            const snapshot = await get(userRef);
-            if (!snapshot.exists()) {
-                await set(userRef, {
-                    name:  user.displayName,
-                    color: "#00ffff",
-                    uid:   user.uid,
-                    email: user.email
-                });
-            }
+    // Pick new target occasionally
+    moveTimer--;
+    if (moveTimer <= 0) {
+      moveTimer = 60 + Math.floor(Math.random()*120);
+      tx = 30 + Math.random() * (W - 130);
+      ty = GROUND - 5;
 
-            // Preencher campo de apelido com o nome atual
-            const uData = snapshot.exists() ? snapshot.val() : {};
-            document.getElementById('profileName').value = uData.name || user.displayName;
-
-            // Inicia os sistemas principais
-            initChat();
-            initFeed();
-            initMultiplayerSystem();
-        } else {
-            currentUser = null;
-            document.getElementById('authArea').style.display = 'block';
-            document.getElementById('mainNav').style.display  = 'none';
-            const statusBox = document.getElementById('connectionStatus');
-            statusBox.style.color = "#ff3333";
-            statusBox.innerText   = `[!] CONEXÃO NEURAL: INATIVA - REQUISITA DECODIFICAÇÃO DE CONTA`;
+      // Chase other stickmans?
+      const others = Object.keys(stickmans).filter(oid => oid !== id);
+      if (others.length && Math.random() < 0.4) {
+        const target = stickmans[others[Math.floor(Math.random()*others.length)]];
+        if (target) {
+          tx = parseFloat(target.el.style.left);
+          ty = parseFloat(target.el.style.top);
         }
-    });
+      }
+      // Random jump
+      if (Math.random() < 0.3 && !jumping) {
+        vy = -12 - Math.random()*5; jumping = true;
+      }
+    }
 
-    // ── EXTRAIR DADOS NUCLEARES (BUSCA DE STICKMAN) ───────────────────────────
-    document.getElementById('btnBuscar').addEventListener('click', async () => {
-        const queryName = document.getElementById('stickmanName').value.trim();
-        if (!queryName) return alert("Insira um codinome válido para descriptografar.");
+    // Move toward target
+    const dx = tx - x;
+    vx += dx > 0 ? 0.3 : -0.3;
+    vx *= 0.88; // friction
+    // Gravity
+    vy += GRAVITY;
+    y  += vy;
+    x  += vx;
 
-        const panel = document.getElementById('profilePanel');
-        panel.style.display = "none";
+    // Ground collision
+    if (y >= GROUND) { y = GROUND; vy = 0; jumping = false; }
+    // Wall collision
+    x = Math.max(0, Math.min(W - 80, x));
 
-        try {
-            const dbRef    = ref(db);
-            const snapshot = await get(child(dbRef, 'stickmans'));
-            if (!snapshot.exists()) return alert("Nenhum registro de consciência detectado na Matrix.");
+    el.style.left = x + 'px';
+    el.style.top  = y + 'px';
 
-            let foundKey  = null;
-            let foundData = null;
+    // Flip based on direction
+    el.style.transform = vx < -0.5 ? 'scaleX(-1)' : 'scaleX(1)';
 
-            snapshot.forEach(childSnap => {
-                const data = childSnap.val();
-                let nomesParaChecar = [childSnap.key.toLowerCase()];
-                if (data.id)              nomesParaChecar.push(String(data.id).toLowerCase());
-                if (data.historico_nomes) nomesParaChecar = nomesParaChecar.concat(data.historico_nomes.map(n => n.toLowerCase()));
-                if (data.nomes_passados)  nomesParaChecar = nomesParaChecar.concat(data.nomes_passados.map(n => n.toLowerCase()));
+    // Redraw stickman
+    drawStickmanFrame(sm.cnv.getContext('2d'), sm.data, frame);
 
-                if (nomesParaChecar.includes(queryName.toLowerCase())) {
-                    foundData = data;
-                    foundKey  = childSnap.key;
+    // Combat: if close to another stickman
+    const others = Object.keys(stickmans).filter(oid => oid !== id);
+    others.forEach(oid => {
+      const other = stickmans[oid];
+      if (!other) return;
+      const ox = parseFloat(other.el.style.left);
+      const oy = parseFloat(other.el.style.top);
+      const dist = Math.hypot(x-ox, y-oy);
+      if (dist < 80 && Math.random() < 0.01) {
+        // Deal damage locally (owner syncs)
+        if (sm.data.creator === myNick) {
+          const dmg = 5 + Math.floor(Math.random()*10);
+          const newHp = Math.max(0, (other.data.hp||50) - dmg);
+          // Update in DB
+          // find firebase key for oid
+          get(ref(db, `desktopRooms/${roomId}/items`)).then(snap => {
+            if (!snap.exists()) return;
+            snap.forEach(child => {
+              if (child.val().id === oid) {
+                update(ref(db, `desktopRooms/${roomId}/items/${child.key}`), { hp: newHp });
+                if (newHp <= 0) {
+                  // Death flash then remove
+                  setTimeout(() => {
+                    remove(ref(db, `desktopRooms/${roomId}/items/${child.key}`));
+                  }, 800);
                 }
+              }
             });
-
-            if (!foundData) return alert("Aviso: Consciência limpa ou não registrada nos distritos ativos.");
-
-            // Preencher a HUD Matrix
-            document.getElementById('stickName').innerText   = foundKey.toUpperCase();
-            document.getElementById('stickUID').innerText    = `#${foundKey.substring(0, 6).toUpperCase()}`;
-            document.getElementById('stickDate').innerText   = foundData.creation_date || foundData.criacao || "Desconhecida";
-            document.getElementById('stickVisits').innerText = foundData.visits  || foundData.visitas_stickland || "1";
-            document.getElementById('stickDeaths').innerText = foundData.deaths  || foundData.mortes || "0";
-
-            const avatarImg = document.getElementById('stickAvatar');
-            const b64 = foundData.image_b64 || foundData.avatar_b64;
-            avatarImg.src = b64 ? `data:image/png;base64,${b64}` : 'image_104ff9.png';
-
-            // Alinhamento de Facção
-            const factionLabel = document.getElementById('stickFaction');
-            const fac = (foundData.alinhamento || "").toLowerCase();
-            if (fac === "heroi" || fac === "pacífico") {
-                factionLabel.innerText   = "Protetor do Distrito";
-                factionLabel.className   = "faction-hero";
-            } else if (fac === "vilao" || fac === "destrutor" || fac === "hostil") {
-                factionLabel.innerText   = "Sindicato do Caos";
-                factionLabel.className   = "faction-villain";
-            } else {
-                factionLabel.innerText   = "Cidadão Comum";
-                factionLabel.className   = "faction-citizen";
-            }
-
-            // Ex-Nomes
-            let arrayNomes = [];
-            if (foundData.historico_nomes) arrayNomes = arrayNomes.concat(foundData.historico_nomes);
-            if (foundData.nomes_passados)  arrayNomes = arrayNomes.concat(foundData.nomes_passados);
-            arrayNomes = [...new Set(arrayNomes)].filter(n => n.toLowerCase() !== foundKey.toLowerCase());
-
-            const histRow = document.getElementById('stickHistoryRow');
-            if (arrayNomes.length > 0) {
-                histRow.style.display = "block";
-                document.getElementById('stickHistory').innerText = arrayNomes.join(", ");
-            } else {
-                histRow.style.display = "none";
-            }
-
-            // Memória Psicológica
-            const coreBox = document.getElementById('blockCoreData');
-            coreBox.innerHTML = "";
-            if (foundData.personalidade) {
-                coreBox.innerHTML += `<div class="log-entry"><span class="log-meta">[PERFIL]:</span> ${foundData.personalidade}</div>`;
-            }
-            if (foundData.objetivo) {
-                coreBox.innerHTML += `<div class="log-entry"><span class="log-meta">[OBJETIVO]:</span> ${foundData.objetivo}</div>`;
-            }
-            if (foundData.pensamentos_importantes) {
-                coreBox.innerHTML += `<div class="log-entry"><span class="log-meta">[PENSAMENTO CENTRAL]:</span> ${foundData.pensamentos_importantes}</div>`;
-            }
-            if (foundData.traumas) {
-                const t = Array.isArray(foundData.traumas) ? foundData.traumas.join(", ") : JSON.stringify(foundData.traumas);
-                coreBox.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff3333;">[TRAUMAS ATIVOS]:</span> ${t}</div>`;
-            }
-            if (coreBox.innerHTML === "") coreBox.innerHTML = "<p style='color:#555;font-size:11px;'>Mente sem diretrizes anômalas estritas.</p>";
-
-            // Histórico de Conversas
-            const convBox = document.getElementById('blockConversations');
-            convBox.innerHTML = "";
-            if (foundData.memory && foundData.memory.length > 0) {
-                foundData.memory.forEach(c => {
-                    convBox.innerHTML += `
-                        <div class="log-entry">
-                            <span class="log-user">[User]:</span> ${c.user}<br>
-                            <span class="log-ai">[${foundKey}]:</span> ${c.ai}
-                        </div>`;
-                });
-            } else {
-                convBox.innerHTML = `<p style="color:#555;font-size:11px;">Sem logs de áudio recentes.</p>`;
-            }
-
-            // Conexões Sociais
-            const socialBox = document.getElementById('blockSocialNet');
-            socialBox.innerHTML = "";
-            const amg  = foundData.amigos   ? (Array.isArray(foundData.amigos)   ? foundData.amigos.join(", ")   : foundData.amigos)   : "Nenhum amigo registrado";
-            const inim = foundData.inimigos ? (Array.isArray(foundData.inimigos) ? foundData.inimigos.join(", ") : foundData.inimigos) : "Nenhum rival declarado";
-            socialBox.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#00ff66;">[AMIGOS]:</span> ${amg}</div>`;
-            socialBox.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff3333;">[INIMIGOS]:</span> ${inim}</div>`;
-            if (foundData.usuarios_odiados) {
-                socialBox.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff00ff;">[HUMANOS ODIADOS]:</span> ${foundData.usuarios_odiados}</div>`;
-            }
-
-            // Histórico de Combate
-            const combatBox = document.getElementById('blockCombatLog');
-            combatBox.innerHTML = "";
-            if (foundData.historico_combates && foundData.historico_combates.length > 0) {
-                foundData.historico_combates.forEach(combate => {
-                    combatBox.innerHTML += `<div class="log-entry" style="color:#ffcc00;">[BATALHA]: ${combate}</div>`;
-                });
-            } else {
-                if (fac === "vilao" || fac === "hostil") {
-                    combatBox.innerHTML = "<div class='log-entry' style='color:#ff3333;'>[ALERTA]: Registros indicam vandalismo nas fronteiras da Stickland!</div>";
-                } else if (fac === "heroi" || fac === "pacífico") {
-                    combatBox.innerHTML = "<div class='log-entry' style='color:#00ff66;'>[PATRULHA]: Entidade detectada protegendo civis e interceptando ameaças.</div>";
-                } else {
-                    combatBox.innerHTML = "<p style='color:#555;font-size:11px;'>Nenhum combate violento recente registrado na central.</p>";
-                }
-            }
-
-            panel.style.display = "block";
-
-        } catch (err) {
-            console.error(err);
-            alert("Falha fatal na descriptografia de pacotes da Matrix.");
+          });
         }
+        // Show speech bubble
+        showBubble(sm.el, randomFight());
+      }
     });
 
-    // ── CANAL COLETIVO (CHAT) ─────────────────────────────────────────────────
-    function initChat() {
-        const chatWin = document.getElementById('chatWindow');
-        onValue(ref(db, 'chat'), (snapshot) => {
-            chatWin.innerHTML = "";
-            if (!snapshot.exists()) return;
-            snapshot.forEach(childSnap => {
-                const m = childSnap.val();
-                chatWin.innerHTML += `<div class="chat-msg"><span class="chat-time">[${new Date(m.timestamp).toLocaleTimeString()}]</span> <span style="color:${m.color || '#fff'}">${m.author}</span>: ${m.text}</div>`;
-            });
-            chatWin.scrollTop = chatWin.scrollHeight;
-        });
-    }
+    sm.raf = requestAnimationFrame(tick);
+  }
+  tick();
+}
 
-    document.getElementById('btnEnviarChat').addEventListener('click', () => {
-        const txt = document.getElementById('chatMessage').value.trim();
-        if (!txt || !currentUser) return;
-        get(ref(db, `users/${currentUser.uid}`)).then(snap => {
-            const uData = snap.val() || {};
-            push(ref(db, 'chat'), {
-                author:    uData.name  || currentUser.displayName,
-                color:     uData.color || '#00ffff',
-                text:      txt,
-                timestamp: Date.now()
-            });
-            document.getElementById('chatMessage').value = "";
-        });
+const fightLines = [
+  'Toma!', 'Bora!', 'Argh!', 'Não me toca!',
+  'Vou te destruir!', 'Hiyaaa!', 'Sai daqui!!',
+  'Minha vez agora!', 'Pow!', 'Tá morto!'
+];
+const idleLines = [
+  '...', 'oi', 'hmm', 'que lugar estranho',
+  'cadê meu amigo?', 'tô aqui', 'uiii'
+];
+function randomFight() { return fightLines[Math.floor(Math.random()*fightLines.length)]; }
+function randomIdle()  { return idleLines[Math.floor(Math.random()*idleLines.length)]; }
+
+function showBubble(parentEl, text) {
+  // Remove existing
+  const old = parentEl.querySelector('.stickman-bubble');
+  if (old) old.remove();
+  const b = document.createElement('div');
+  b.className = 'stickman-bubble';
+  b.textContent = text;
+  parentEl.appendChild(b);
+  setTimeout(() => b.remove(), 4000);
+}
+
+// ═══════════════════ DRAG HELPERS ═══════════════════════════════════════════
+function makeDraggable(el, handle) {
+  let ox, oy, sx, sy;
+  handle.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    sx = e.clientX; sy = e.clientY;
+    ox = parseInt(el.style.left)||0; oy = parseInt(el.style.top)||0;
+    const move = ev => {
+      el.style.left = (ox + ev.clientX - sx) + 'px';
+      el.style.top  = (oy + ev.clientY - sy) + 'px';
+    };
+    const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); };
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+    e.preventDefault();
+  });
+}
+
+function makeDraggableDesktop(el, fbId, type) {
+  let ox, oy, sx, sy, dragging = false;
+  el.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    dragging = true;
+    sx = e.clientX; sy = e.clientY;
+    ox = parseFloat(el.style.left)||0;
+    oy = parseFloat(el.style.top)||0;
+    el.style.zIndex = 800;
+    e.stopPropagation();
+    const move = ev => {
+      if (!dragging) return;
+      el.style.left = (ox + ev.clientX - sx) + 'px';
+      el.style.top  = (oy + ev.clientY - sy) + 'px';
+    };
+    const up = ev => {
+      if (!dragging) return;
+      dragging = false;
+      el.style.zIndex = type === 'stickman' ? 400 : 300;
+      // Sync position to DB
+      const newX = parseFloat(el.style.left);
+      const newY = parseFloat(el.style.top);
+      syncItemPos(fbId, newX, newY);
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('mouseup', up);
+    };
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+    e.preventDefault();
+  });
+}
+
+function syncItemPos(fbId, x, y) {
+  // Find firebase key by id
+  get(ref(db, `desktopRooms/${roomId}/items`)).then(snap => {
+    if (!snap.exists()) return;
+    snap.forEach(child => {
+      if (child.val().id === fbId) {
+        update(ref(db, `desktopRooms/${roomId}/items/${child.key}`), { x, y });
+      }
     });
+  });
+}
 
-    // Enviar chat com Enter
-    document.getElementById('chatMessage').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') document.getElementById('btnEnviarChat').click();
-    });
+// ═══════════════════ START BTN MENU ═════════════════════════════════════════
+document.getElementById('startBtn').addEventListener('click', () => {
+  const menu = document.createElement('div');
+  menu.style.cssText = `position:absolute;bottom:36px;left:0;
+    background:#1f5fa6;border:1px solid #3a7bd5;
+    color:#fff;font-family:'Tahoma',sans-serif;font-size:12px;
+    width:180px;z-index:600;box-shadow:3px -3px 8px rgba(0,0,0,0.5);`;
+  const items = [
+    ['🎨 Paint Studio', () => { document.getElementById('paintWindow').style.display='block'; }],
+    ['🗑 Limpar Desktop', () => {
+      if (confirm('Remover todos os itens do desktop desta sala?')) {
+        remove(ref(db, `desktopRooms/${roomId}/items`));
+      }
+    }],
+    ['🚪 Sair da Sala', () => {
+      set(ref(db, `desktopRooms/${roomId}/players/${myId}/active`), false);
+      location.reload();
+    }],
+  ];
+  items.forEach(([label, fn]) => {
+    const div = document.createElement('div');
+    div.textContent = label;
+    div.style.cssText = 'padding:8px 14px;cursor:pointer;border-bottom:1px solid #2d6fc0;';
+    div.addEventListener('mouseenter', () => div.style.background='#2567be');
+    div.addEventListener('mouseleave', () => div.style.background='');
+    div.addEventListener('click', () => { fn(); menu.remove(); });
+    menu.appendChild(div);
+  });
+  document.getElementById('taskbar').appendChild(menu);
+  setTimeout(() => document.addEventListener('click', function rm() {
+    menu.remove(); document.removeEventListener('click', rm);
+  }), 100);
+});
 
-    // ── MURAL DE POSTAGENS (FEED) ─────────────────────────────────────────────
-    function initFeed() {
-        const feedContainer = document.getElementById('feedContainer');
-        onValue(ref(db, 'feed'), (snapshot) => {
-            feedContainer.innerHTML = "";
-            if (!snapshot.exists()) {
-                feedContainer.innerHTML = `<p style="color:#666;">Nenhuma transmissão feita no mural.</p>`;
-                return;
-            }
-            const list = [];
-            snapshot.forEach(cs => { list.unshift(cs.val()); });
-            list.forEach(p => {
-                feedContainer.innerHTML += `
-                    <div class="post-card">
-                        <div class="post-meta">Injetado por <span class="post-author" style="color:${p.color}">${p.author}</span> em ${p.date}</div>
-                        <div class="post-body">${p.text}</div>
-                    </div>`;
-            });
-        });
-    }
-
-    document.getElementById('btnPostar').addEventListener('click', () => {
-        const txt = document.getElementById('postText').value.trim();
-        if (!txt || !currentUser) return;
-        get(ref(db, `users/${currentUser.uid}`)).then(snap => {
-            const uData = snap.val() || {};
-            push(ref(db, 'feed'), {
-                author: uData.name  || currentUser.displayName,
-                color:  uData.color || '#ff9900',
-                text:   txt,
-                date:   new Date().toLocaleString('pt-BR')
-            });
-            document.getElementById('postText').value = "";
-        });
-    });
-
-    // ── CONFIGURAÇÕES DE PERFIL ───────────────────────────────────────────────
-    document.getElementById('btnSalvarPerfil').addEventListener('click', () => {
-        const newName  = document.getElementById('profileName').value.trim();
-        const newColor = document.getElementById('profileColor').value;
-        if (!newName || !currentUser) return alert("Defina um apelido válido.");
-
-        update(ref(db, `users/${currentUser.uid}`), {
-            name:  newName,
-            color: newColor
-        }).then(() => alert("Identidade Virtual atualizada na Matrix!"));
-    });
-
-    // ── LÓGICA DO SISTEMA MULTIPLAYER (CO-OP & AMIGOS) ───────────────────────
-    function initMultiplayerSystem() {
-        carregarListaAmigos();
-        carregarSolicitacoesPendentes();
-        ouvirConvitesMultiplayer();
-        initRoomSystem();
-    }
-
-    // ── SISTEMA DE SALAS PÚBLICAS ─────────────────────────────────────────────
-    function initRoomSystem() {
-        // Listar salas em tempo real
-        onValue(ref(db, 'public_rooms'), (snapshot) => {
-            const container = document.getElementById('roomListContainer');
-            container.innerHTML = "";
-
-            if (!snapshot.exists()) {
-                container.innerHTML = `<p style="color:#666; font-size:12px;">Nenhuma sala ativa. Crie a primeira!</p>`;
-                return;
-            }
-
-            snapshot.forEach(childSnap => {
-                const room   = childSnap.val();
-                const roomId = childSnap.key;
-                const count  = room.members ? Object.keys(room.members).length : 0;
-                const isHost = currentUser && room.hostUid === currentUser.uid;
-
-                const card = document.createElement('div');
-                card.className = "room-card";
-                card.innerHTML = `
-                    <div class="room-info">
-                        <div class="room-name">📡 ${room.name}</div>
-                        <div class="room-host">Host: ${room.hostName}</div>
-                        <div class="room-count">👾 ${count} operador(es) dentro</div>
-                    </div>
-                    <div style="display:flex; gap:6px;">
-                        <button class="btn-entrar-sala" style="background:#00ffff; color:#000;">Entrar</button>
-                        ${isHost ? `<button class="btn-deletar-sala" style="background:#ff3333; color:#fff;">Fechar</button>` : ''}
-                    </div>
-                `;
-                container.appendChild(card);
-
-                card.querySelector('.btn-entrar-sala').addEventListener('click', () => {
-                    entrarNaSalaPublica(roomId, room.name);
-                });
-
-                if (isHost) {
-                    card.querySelector('.btn-deletar-sala').addEventListener('click', async () => {
-                        await remove(ref(db, `public_rooms/${roomId}`));
-                    });
-                }
-            });
-        });
-
-        // Botão Criar Sala
-        document.getElementById('btnCriarSala').addEventListener('click', async () => {
-            if (!currentUser) return alert("Você precisa estar logado.");
-            const nome = document.getElementById('roomNameInput').value.trim();
-            if (!nome) return alert("Dê um nome para a sala!");
-
-            const snap    = await get(ref(db, `users/${currentUser.uid}`));
-            const meuNome = snap.exists() ? snap.val().name : currentUser.displayName;
-
-            const newRoomRef = push(ref(db, 'public_rooms'));
-            await set(newRoomRef, {
-                name:     nome,
-                hostUid:  currentUser.uid,
-                hostName: meuNome,
-                created:  Date.now(),
-                members:  {}
-            });
-
-            document.getElementById('roomNameInput').value = "";
-            entrarNaSalaPublica(newRoomRef.key, nome);
-        });
-    }
-
-    async function entrarNaSalaPublica(roomId, roomName) {
-        if (!currentUser) return;
-
-        const snap    = await get(ref(db, `users/${currentUser.uid}`));
-        const meuNome = snap.exists() ? snap.val().name : currentUser.displayName;
-
-        // Registra o membro na sala
-        await set(ref(db, `public_rooms/${roomId}/members/${currentUser.uid}`), {
-            name:     meuNome,
-            joinedAt: Date.now()
-        });
-
-        // Remove membro ao desconectar (onDisconnect)
-        const memberRef = ref(db, `public_rooms/${roomId}/members/${currentUser.uid}`);
-        // Entra na sala visual
-        currentRoomRef = ref(db, `public_rooms/${roomId}`);
-        entrarNaSalaFakePC(roomId, roomName, true);
-    }
-
-    // Buscar Operadores para adicionar
-    document.getElementById('btnSearchUser').addEventListener('click', async () => {
-        const searchStr  = document.getElementById('searchUserStr').value.trim().toLowerCase();
-        const resultsDiv = document.getElementById('userSearchResults');
-        resultsDiv.innerHTML = "";
-        if (!searchStr) return;
-
-        const usersSnap = await get(ref(db, 'users'));
-        if (!usersSnap.exists()) return;
-
-        usersSnap.forEach(childSnap => {
-            const u = childSnap.val();
-            if (u.uid !== currentUser.uid && u.name && u.name.toLowerCase().includes(searchStr)) {
-                const card = document.createElement('div');
-                card.className = "friend-card";
-                card.innerHTML = `
-                    <span style="color:${u.color || '#fff'}">${u.name}</span>
-                    <button class="add-btn" data-uid="${u.uid}" style="padding:5px 10px; font-size:11px; background:#ff9900;">Enviar Solicitação</button>
-                `;
-                resultsDiv.appendChild(card);
-
-                card.querySelector('.add-btn').addEventListener('click', async () => {
-                    const snapUser       = await get(ref(db, `users/${currentUser.uid}`));
-                    const meuNomeAtualizado = snapUser.exists() ? snapUser.val().name : currentUser.displayName;
-
-                    await set(ref(db, `friend_requests/${u.uid}/${currentUser.uid}`), {
-                        uid:  currentUser.uid,
-                        name: meuNomeAtualizado
-                    });
-                    alert(`Solicitação enviada para ${u.name}!`);
-                });
-            }
-        });
-
-        if (resultsDiv.innerHTML === "") {
-            resultsDiv.innerHTML = `<p style="color:#666; font-size:12px;">Nenhum operador encontrado.</p>`;
-        }
-    });
-
-    // Listar Amigos Adicionados
-    function carregarListaAmigos() {
-        onValue(ref(db, `friends/${currentUser.uid}`), (snapshot) => {
-            const container = document.getElementById('friendsListContainer');
-            container.innerHTML = "";
-            if (!snapshot.exists()) {
-                container.innerHTML = `<p style="color:#666; font-size:12px;">Nenhum amigo adicionado ainda.</p>`;
-                return;
-            }
-            snapshot.forEach(childSnap => {
-                const f    = childSnap.val();
-                const card = document.createElement('div');
-                card.className = "friend-card";
-                card.innerHTML = `
-                    <span style="color:#00ffff;">[ON] ${f.name}</span>
-                    <div style="display:flex; gap:5px;">
-                        <button class="invite-btn" style="background:#00ff66; padding:5px 10px; font-size:11px;">Convidar pro PC</button>
-                        <button class="visit-btn"  style="background:#00ffff; color:#000; padding:5px 10px; font-size:11px;">Visitar PC</button>
-                    </div>
-                `;
-                container.appendChild(card);
-
-                card.querySelector('.invite-btn').addEventListener('click', async () => {
-                    const snapUser          = await get(ref(db, `users/${currentUser.uid}`));
-                    const meuNomeAtualizado = snapUser.exists() ? snapUser.val().name : currentUser.displayName;
-
-                    await set(ref(db, `multiplayer_invites/${f.uid}`), {
-                        hostUid:  currentUser.uid,
-                        hostName: meuNomeAtualizado,
-                        status:   "pending"
-                    });
-                    entrarNaSalaFakePC(currentUser.uid, `Seu Próprio Desktop (Host)`);
-                    alert("Convite enviado! Aguardando o amigo entrar na sala...");
-                });
-
-                card.querySelector('.visit-btn').addEventListener('click', () => {
-                    entrarNaSalaFakePC(f.uid, `Desktop de ${f.name}`);
-                });
-            });
-        });
-    }
-
-    // Listar Pedidos de Amizade Pendentes
-    function carregarSolicitacoesPendentes() {
-        onValue(ref(db, `friend_requests/${currentUser.uid}`), (snapshot) => {
-            const container = document.getElementById('friendRequestsContainer');
-            container.innerHTML = "";
-            if (!snapshot.exists()) {
-                container.innerHTML = `<p style="color:#666; font-size:12px;">Nenhuma solicitação pendente.</p>`;
-                return;
-            }
-            snapshot.forEach(childSnap => {
-                const req  = childSnap.val();
-                const card = document.createElement('div');
-                card.className       = "friend-card";
-                card.style.borderColor = "#ff9900";
-                card.innerHTML = `
-                    <span style="color:#ff9900;">${req.name}</span>
-                    <button class="accept-btn" style="background:#00ff66; padding:5px 10px; font-size:11px;">Aceitar</button>
-                `;
-                container.appendChild(card);
-
-                card.querySelector('.accept-btn').addEventListener('click', async () => {
-                    const snapUser          = await get(ref(db, `users/${currentUser.uid}`));
-                    const meuNomeAtualizado = snapUser.exists() ? snapUser.val().name : currentUser.displayName;
-
-                    await set(ref(db, `friends/${currentUser.uid}/${req.uid}`), { uid: req.uid,         name: req.name });
-                    await set(ref(db, `friends/${req.uid}/${currentUser.uid}`), { uid: currentUser.uid, name: meuNomeAtualizado });
-                    await remove(ref(db, `friend_requests/${currentUser.uid}/${req.uid}`));
-                    alert("Amizade firmada na Matrix!");
-                });
-            });
-        });
-    }
-
-    // Ouvir Convites de Salas Multiplayer
-    function ouvirConvitesMultiplayer() {
-        onValue(ref(db, `multiplayer_invites/${currentUser.uid}`), (snapshot) => {
-            if (!snapshot.exists()) return;
-            const inv = snapshot.val();
-            if (inv.status === "pending") {
-                if (confirm(`${inv.hostName} está te chamando para monitorar o PC dele. Aceitar incursão?`)) {
-                    update(ref(db, `multiplayer_invites/${currentUser.uid}`), { status: "accepted" });
-                    entrarNaSalaFakePC(inv.hostUid, `Desktop de ${inv.hostName}`);
-                } else {
-                    remove(ref(db, `multiplayer_invites/${currentUser.uid}`));
-                }
-            }
-        });
-    }
-
-    // ── PC FAKE RETRO ─────────────────────────────────────────────────────────
-    function entrarNaSalaFakePC(roomIdOrUid, titleText, isPublicRoom = false) {
-        document.getElementById('roomTitle').innerText           = `[SALA] ${titleText.toUpperCase()}`;
-        document.getElementById('fake-pc-room').style.display   = "block";
-
-        if (!isPublicRoom) {
-            currentRoomRef = ref(db, `rooms/${roomIdOrUid}`);
-        }
-        // se isPublicRoom, currentRoomRef já foi setado em entrarNaSalaPublica
-
-        ouvirElementosDaSala();
-
-        document.getElementById('fake-pc-room').removeEventListener('mousemove', enviarPosicaoMouse);
-        document.getElementById('fake-pc-room').addEventListener('mousemove', enviarPosicaoMouse);
-    }
-
-    function enviarPosicaoMouse(e) {
-        if (!currentRoomRef || !currentUser) return;
-        const canvas     = document.getElementById('multiplayer-canvas');
-        const canvasRect = canvas.getBoundingClientRect();
-
-        const pctX = ((e.clientX - canvasRect.left)  / canvasRect.width)  * 100;
-        const pctY = ((e.clientY - canvasRect.top)   / canvasRect.height) * 100;
-
-        get(ref(db, `users/${currentUser.uid}`)).then(snap => {
-            const meuNome = snap.exists() ? snap.val().name : currentUser.displayName;
-            update(child(currentRoomRef, `cursors/${currentUser.uid}`), {
-                x:        pctX,
-                y:        pctY,
-                name:     meuNome,
-                lastSeen: Date.now()
-            });
-        });
-    }
-
-    function ouvirElementosDaSala() {
-        if (!currentRoomRef) return;
-
-        onValue(currentRoomRef, (snapshot) => {
-            const canvas = document.getElementById('multiplayer-canvas');
-
-            // Remove cursores antigos
-            document.querySelectorAll('.multiplayer-cursor').forEach(c => c.remove());
-
-            if (!snapshot.exists()) return;
-            const roomData = snapshot.val();
-
-            if (roomData.cursors) {
-                Object.keys(roomData.cursors).forEach(uid => {
-                    if (uid === currentUser.uid) return;
-
-                    const mouse = roomData.cursors[uid];
-                    if (Date.now() - mouse.lastSeen > 10000) return;
-
-                    const cursorEl = document.createElement('div');
-                    cursorEl.className        = "multiplayer-cursor";
-                    cursorEl.style.position   = "absolute";
-                    cursorEl.style.left       = `${mouse.x}%`;
-                    cursorEl.style.top        = `${mouse.y}%`;
-                    cursorEl.style.width      = "24px";
-                    cursorEl.style.height     = "24px";
-                    cursorEl.style.backgroundImage  = "url('image_0fd01b.png')";
-                    cursorEl.style.backgroundSize   = "contain";
-                    cursorEl.style.backgroundRepeat = "no-repeat";
-                    cursorEl.style.backgroundColor  = "transparent";
-                    cursorEl.style.border           = "none";
-
-                    const nameTag           = document.createElement('span');
-                    nameTag.innerText       = mouse.name;
-                    nameTag.style.cssText   = `
-                        position:absolute; top:-15px; left:15px;
-                        color:#00ffff; background:#000;
-                        padding:2px 4px; font-size:10px;
-                        border:1px solid #00ffff; white-space:nowrap;
-                    `;
-                    cursorEl.appendChild(nameTag);
-                    canvas.appendChild(cursorEl);
-                });
-            }
-        });
-    }
-
-    document.getElementById('btnSairSala').addEventListener('click', async () => {
-        if (currentRoomRef && currentUser) {
-            // Tenta remover cursor (salas privadas)
-            try { await remove(child(currentRoomRef, `cursors/${currentUser.uid}`)); } catch(_) {}
-            // Tenta remover membro (salas públicas)
-            try { await remove(child(currentRoomRef, `members/${currentUser.uid}`)); } catch(_) {}
-        }
-        document.getElementById('fake-pc-room').removeEventListener('mousemove', enviarPosicaoMouse);
-        document.getElementById('fake-pc-room').style.display = "none";
-        currentRoomRef = null;
-    });
+// Paint button in taskbar
+document.getElementById('btnOpenPaint').addEventListener('click', () => {
+  const w = document.getElementById('paintWindow');
+  w.style.display = w.style.display === 'none' ? 'block' : 'none';
+});
 </script>
 </body>
 </html>
