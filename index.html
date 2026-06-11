@@ -453,18 +453,36 @@
     </div>
 </div>
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, child, update, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { initializeApp } from "firebase/app";
 
-    // Configuração do Firebase apontando para o seu banco do Stickland
+    import { getAuth } from "firebase/auth";
+
+// As credenciais que você pegou no Console do Firebase
+
     const firebaseConfig = {
-        databaseURL: "https://stickland-3ccaa-default-rtdb.firebaseio.com"
-    };
+  
+        apiKey: "SUA_API_KEY",
+  
+        authDomain: "SEU_PROJETO.firebaseapp.com",
+  
+        projectId: "SEU_PROJETO",
+  
+        storageBucket: "SEU_PROJETO.appspot.com",
+  
+        messagingSenderId: "SEU_ID",
+  
+        appId: "SEU_APP_ID"
+};
+
+
+    // LINHA CRUCIAL: Inicializa o Firebase
 
     const app = initializeApp(firebaseConfig);
+
+    // Agora sim, você pode usar o auth
+ 
+    export const auth = getAuth(app);
     const db = getDatabase(app);
-    const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
     let currentUser = null;
