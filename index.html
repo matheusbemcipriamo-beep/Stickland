@@ -269,13 +269,6 @@
 
         .multiplayer-cursor {
             position: absolute;
-            background: #00ffff;
-            color: #000;
-            padding: 2px 6px;
-            font-size: 10px;
-            font-family: monospace;
-            font-weight: bold;
-            border: 1px solid #fff;
             pointer-events: none;
             z-index: 10000;
             white-space: nowrap;
@@ -287,7 +280,7 @@
 <div class="main-wrapper">
     <div class="header">
         <h1>SISTEMA OPERACIONAL STICKLAND</h1>
-        <p style="margin:5px 0 0 0; color: #888; font-size: 12px;">Rede Descentralizada de Consciências & Simulador de Cidade Virtual</p>
+        <p style="margin:5px 0 0 0; color: #888; font-size: 12px;">Rede Descentralizada de Consciências &amp; Simulador de Cidade Virtual</p>
     </div>
 
     <div id="authArea" style="text-align: center;">
@@ -304,7 +297,7 @@
     <div class="nav-tabs" id="mainNav">
         <button class="tab-btn active" data-tab="hud">Matrix HUD</button>
         <button class="tab-btn" data-tab="feed">Feed Global</button>
-        <button class="tab-btn" data-tab="multiplayer">Co-op & Amigos</button>
+        <button class="tab-btn" data-tab="multiplayer">Co-op &amp; Amigos</button>
         <button class="tab-btn" data-tab="grupos">Clãs da Cidade</button>
         <button class="tab-btn" data-tab="chat">Chat Online</button>
         <button class="tab-btn" data-tab="perfil">Meu Perfil</button>
@@ -336,7 +329,7 @@
             </div>
             <div class="matrix-sections">
                 <div class="data-block">
-                    <h4>[ Perfil Psicológico & Memória Dinâmica ]</h4>
+                    <h4>[ Perfil Psicológico &amp; Memória Dinâmica ]</h4>
                     <div class="memory-log" id="blockCoreData"></div>
                 </div>
                 <div class="data-block">
@@ -344,7 +337,7 @@
                     <div class="memory-log" id="blockConversations"></div>
                 </div>
                 <div class="data-block">
-                    <h4>[ Conexões Sociais: Amigos & Inimigos ]</h4>
+                    <h4>[ Conexões Sociais: Amigos &amp; Inimigos ]</h4>
                     <div class="memory-log" id="blockSocialNet"></div>
                 </div>
                 <div class="data-block">
@@ -356,7 +349,7 @@
     </div>
 
     <div id="tab-multiplayer" class="tab-content">
-        <h3 style="color: #ff9900; margin-top:0;">[ REDE DE OPERADORES & SALAS CO-OP ]</h3>
+        <h3 style="color: #ff9900; margin-top:0;">[ REDE DE OPERADORES &amp; SALAS CO-OP ]</h3>
         
         <div class="data-block" style="margin-bottom: 20px;">
             <h4>Pesquisar Operadores (Adicionar Amigos)</h4>
@@ -452,45 +445,53 @@
         <div id="roomStickmans"></div>
     </div>
 </div>
+
+<!-- =====================================================
+     ATENÇÃO: Substitua as credenciais abaixo pelas suas
+     do Console do Firebase antes de publicar!
+     ===================================================== -->
 <script type="module">
-    import { initializeApp } from "firebase/app";
+    // ── IMPORTS COMPLETOS DO FIREBASE ──────────────────────────────────────────
+    import { initializeApp }         from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth,
+             GoogleAuthProvider,
+             signInWithPopup,
+             onAuthStateChanged }    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getDatabase,
+             ref,
+             child,
+             get,
+             set,
+             update,
+             remove,
+             push,
+             onValue }              from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    // ───────────────────────────────────────────────────────────────────────────
 
-    import { getAuth } from "firebase/auth";
-
-// As credenciais que você pegou no Console do Firebase
-
+    // ── CONFIGURAÇÃO DO FIREBASE ───────────────────────────────────────────────
+    // Substitua os valores abaixo pelos do seu projeto no Firebase Console
     const firebaseConfig = {
-  
-        apiKey: "SUA_API_KEY",
-  
-        authDomain: "SEU_PROJETO.firebaseapp.com",
-  
-        projectId: "SEU_PROJETO",
-  
-        storageBucket: "SEU_PROJETO.appspot.com",
-  
+        apiKey:            "SUA_API_KEY",
+        authDomain:        "SEU_PROJETO.firebaseapp.com",
+        databaseURL:       "https://SEU_PROJETO-default-rtdb.firebaseio.com",
+        projectId:         "SEU_PROJETO",
+        storageBucket:     "SEU_PROJETO.appspot.com",
         messagingSenderId: "SEU_ID",
-  
-        appId: "SEU_APP_ID"
-};
+        appId:             "SEU_APP_ID"
+    };
+    // ───────────────────────────────────────────────────────────────────────────
 
-
-    // LINHA CRUCIAL: Inicializa o Firebase
-
-    const app = initializeApp(firebaseConfig);
-
-    // Agora sim, você pode usar o auth
- 
-    export const auth = getAuth(app);
-    const db = getDatabase(app);
+    // ── INICIALIZAÇÃO ──────────────────────────────────────────────────────────
+    const app      = initializeApp(firebaseConfig);
+    const auth     = getAuth(app);
+    const db       = getDatabase(app);
     const provider = new GoogleAuthProvider();
 
-    let currentUser = null;
-    let currentRoomRef = null;
-    let fallbackRoomInterval = null;
+    let currentUser     = null;
+    let currentRoomRef  = null;
 
-    // --- SISTEMA DE ABAS ---
-    const tabs = document.querySelectorAll('.tab-btn');
+    // ── SISTEMA DE ABAS ────────────────────────────────────────────────────────
+    const tabs     = document.querySelectorAll('.tab-btn');
     const contents = document.querySelectorAll('.tab-content');
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -501,7 +502,7 @@
         });
     });
 
-    // --- AUTENTICAÇÃO E LOGIN ---
+    // ── AUTENTICAÇÃO E LOGIN ───────────────────────────────────────────────────
     document.getElementById('btnGoogle').addEventListener('click', () => {
         signInWithPopup(auth, provider).catch(err => console.error("Erro login:", err));
     });
@@ -510,39 +511,43 @@
         if (user) {
             currentUser = user;
             document.getElementById('authArea').style.display = 'none';
-            document.getElementById('mainNav').style.display = 'flex';
-            
+            document.getElementById('mainNav').style.display  = 'flex';
+
             const statusBox = document.getElementById('connectionStatus');
             statusBox.style.color = "#00ff66";
-            statusBox.innerText = `[+] TERMINAL ATIVO: OPERADOR CONECTADO COMO ${user.displayName.toUpperCase()}`;
+            statusBox.innerText   = `[+] TERMINAL ATIVO: OPERADOR CONECTADO COMO ${user.displayName.toUpperCase()}`;
 
             // Registrar ou verificar perfil na Matrix
-            const userRef = ref(db, `users/${user.uid}`);
+            const userRef  = ref(db, `users/${user.uid}`);
             const snapshot = await get(userRef);
             if (!snapshot.exists()) {
                 await set(userRef, {
-                    name: user.displayName,
+                    name:  user.displayName,
                     color: "#00ffff",
-                    uid: user.uid,
+                    uid:   user.uid,
                     email: user.email
                 });
             }
-            
+
+            // Preencher campo de apelido com o nome atual
+            const uData = snapshot.exists() ? snapshot.val() : {};
+            document.getElementById('profileName').value = uData.name || user.displayName;
+
             // Inicia os sistemas principais
             initChat();
             initFeed();
             initMultiplayerSystem();
         } else {
-            // Deslogado
+            currentUser = null;
             document.getElementById('authArea').style.display = 'block';
-            document.getElementById('mainNav').style.display = 'none';
+            document.getElementById('mainNav').style.display  = 'none';
             const statusBox = document.getElementById('connectionStatus');
             statusBox.style.color = "#ff3333";
-            statusBox.innerText = `[!] CONEXÃO NEURAL: INATIVA - REQUISITA DECODIFICAÇÃO DE CONTA`;
+            statusBox.innerText   = `[!] CONEXÃO NEURAL: INATIVA - REQUISITA DECODIFICAÇÃO DE CONTA`;
         }
     });
 
-    // --- EXTRAIR DADOS NUCLEARES (BUSCA DE STICKMAN) ---
+    // ── EXTRAIR DADOS NUCLEARES (BUSCA DE STICKMAN) ───────────────────────────
     document.getElementById('btnBuscar').addEventListener('click', async () => {
         const queryName = document.getElementById('stickmanName').value.trim();
         if (!queryName) return alert("Insira um codinome válido para descriptografar.");
@@ -551,56 +556,59 @@
         panel.style.display = "none";
 
         try {
-            const dbRef = ref(db);
+            const dbRef    = ref(db);
             const snapshot = await get(child(dbRef, 'stickmans'));
             if (!snapshot.exists()) return alert("Nenhum registro de consciência detectado na Matrix.");
 
-            let foundKey = null;
+            let foundKey  = null;
             let foundData = null;
 
-            // Busca exata ou por aproximação de nome
             snapshot.forEach(childSnap => {
                 const data = childSnap.val();
                 let nomesParaChecar = [childSnap.key.toLowerCase()];
-                if (data.id) nomesParaChecar.push(String(data.id).toLowerCase());
+                if (data.id)              nomesParaChecar.push(String(data.id).toLowerCase());
                 if (data.historico_nomes) nomesParaChecar = nomesParaChecar.concat(data.historico_nomes.map(n => n.toLowerCase()));
-                if (data.nomes_passados) nomesParaChecar = nomesParaChecar.concat(data.nomes_passados.map(n => n.toLowerCase()));
+                if (data.nomes_passados)  nomesParaChecar = nomesParaChecar.concat(data.nomes_passados.map(n => n.toLowerCase()));
 
                 if (nomesParaChecar.includes(queryName.toLowerCase())) {
                     foundData = data;
-                    foundKey = childSnap.key; 
+                    foundKey  = childSnap.key;
                 }
             });
 
             if (!foundData) return alert("Aviso: Consciência limpa ou não registrada nos distritos ativos.");
 
-            // Descriptografar e preencher a HUD Matrix
-            document.getElementById('stickName').innerText = foundKey.toUpperCase();
-            document.getElementById('stickUID').innerText = `#${foundKey.substring(0,6).toUpperCase()}`;
-            document.getElementById('stickDate').innerText = foundData.creation_date || foundData.criacao || "Desconhecida";
-            document.getElementById('stickVisits').innerText = foundData.visits || foundData.visitas_stickland || "1";
-            document.getElementById('stickDeaths').innerText = foundData.deaths || foundData.mortes || "0";
-            
-            const avatarImg = document.getElementById('stickAvatar');
-            avatarImg.src = foundData.image_b64 || foundData.avatar_b64 ? `data:image/png;base64,${foundData.image_b64 || foundData.avatar_b64}` : 'image_104ff9.png';
+            // Preencher a HUD Matrix
+            document.getElementById('stickName').innerText   = foundKey.toUpperCase();
+            document.getElementById('stickUID').innerText    = `#${foundKey.substring(0, 6).toUpperCase()}`;
+            document.getElementById('stickDate').innerText   = foundData.creation_date || foundData.criacao || "Desconhecida";
+            document.getElementById('stickVisits').innerText = foundData.visits  || foundData.visitas_stickland || "1";
+            document.getElementById('stickDeaths').innerText = foundData.deaths  || foundData.mortes || "0";
 
-            // Alinhamento de Facção visual
+            const avatarImg = document.getElementById('stickAvatar');
+            const b64 = foundData.image_b64 || foundData.avatar_b64;
+            avatarImg.src = b64 ? `data:image/png;base64,${b64}` : 'image_104ff9.png';
+
+            // Alinhamento de Facção
             const factionLabel = document.getElementById('stickFaction');
-            const fac = foundData.alinhamento ? foundData.alinhamento.toLowerCase() : "cidadao";
-            if(fac === "heroi" || fac === "pacífico") {
-                factionLabel.innerText = "Protetor do Distrito"; factionLabel.className = "faction-hero";
-            } else if(fac === "vilao" || fac === "destrutor" || fac === "hostil") {
-                factionLabel.innerText = "Sindicato do Caos"; factionLabel.className = "faction-villain";
+            const fac = (foundData.alinhamento || "").toLowerCase();
+            if (fac === "heroi" || fac === "pacífico") {
+                factionLabel.innerText   = "Protetor do Distrito";
+                factionLabel.className   = "faction-hero";
+            } else if (fac === "vilao" || fac === "destrutor" || fac === "hostil") {
+                factionLabel.innerText   = "Sindicato do Caos";
+                factionLabel.className   = "faction-villain";
             } else {
-                factionLabel.innerText = "Cidadão Comum"; factionLabel.className = "faction-citizen";
+                factionLabel.innerText   = "Cidadão Comum";
+                factionLabel.className   = "faction-citizen";
             }
 
             // Ex-Nomes
             let arrayNomes = [];
-            if(foundData.historico_nomes) arrayNomes = arrayNomes.concat(foundData.historico_nomes);
-            if(foundData.nomes_passados) arrayNomes = arrayNomes.concat(foundData.nomes_passados);
+            if (foundData.historico_nomes) arrayNomes = arrayNomes.concat(foundData.historico_nomes);
+            if (foundData.nomes_passados)  arrayNomes = arrayNomes.concat(foundData.nomes_passados);
             arrayNomes = [...new Set(arrayNomes)].filter(n => n.toLowerCase() !== foundKey.toLowerCase());
-            
+
             const histRow = document.getElementById('stickHistoryRow');
             if (arrayNomes.length > 0) {
                 histRow.style.display = "block";
@@ -612,14 +620,20 @@
             // Memória Psicológica
             const coreBox = document.getElementById('blockCoreData');
             coreBox.innerHTML = "";
-            if(foundData.pensamentos_importantes) {
+            if (foundData.personalidade) {
+                coreBox.innerHTML += `<div class="log-entry"><span class="log-meta">[PERFIL]:</span> ${foundData.personalidade}</div>`;
+            }
+            if (foundData.objetivo) {
+                coreBox.innerHTML += `<div class="log-entry"><span class="log-meta">[OBJETIVO]:</span> ${foundData.objetivo}</div>`;
+            }
+            if (foundData.pensamentos_importantes) {
                 coreBox.innerHTML += `<div class="log-entry"><span class="log-meta">[PENSAMENTO CENTRAL]:</span> ${foundData.pensamentos_importantes}</div>`;
             }
-            if(foundData.traumas) {
-                let t = Array.isArray(foundData.traumas) ? foundData.traumas.join(", ") : JSON.stringify(foundData.traumas);
+            if (foundData.traumas) {
+                const t = Array.isArray(foundData.traumas) ? foundData.traumas.join(", ") : JSON.stringify(foundData.traumas);
                 coreBox.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff3333;">[TRAUMAS ATIVOS]:</span> ${t}</div>`;
             }
-            if(coreBox.innerHTML === "") coreBox.innerHTML = "<p style='color:#555;font-size:11px;'>Mente sem diretrizes anômalas estritas.</p>";
+            if (coreBox.innerHTML === "") coreBox.innerHTML = "<p style='color:#555;font-size:11px;'>Mente sem diretrizes anômalas estritas.</p>";
 
             // Histórico de Conversas
             const convBox = document.getElementById('blockConversations');
@@ -639,25 +653,25 @@
             // Conexões Sociais
             const socialBox = document.getElementById('blockSocialNet');
             socialBox.innerHTML = "";
-            let amg = foundData.amigos ? (Array.isArray(foundData.amigos) ? foundData.amigos.join(", ") : foundData.amigos) : "Nenhum amigo registrado";
-            let inim = foundData.inimigos ? (Array.isArray(foundData.inimigos) ? foundData.inimigos.join(", ") : foundData.inimigos) : "Nenhum rival declarado";
+            const amg  = foundData.amigos   ? (Array.isArray(foundData.amigos)   ? foundData.amigos.join(", ")   : foundData.amigos)   : "Nenhum amigo registrado";
+            const inim = foundData.inimigos ? (Array.isArray(foundData.inimigos) ? foundData.inimigos.join(", ") : foundData.inimigos) : "Nenhum rival declarado";
             socialBox.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#00ff66;">[AMIGOS]:</span> ${amg}</div>`;
             socialBox.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff3333;">[INIMIGOS]:</span> ${inim}</div>`;
-            if(foundData.usuarios_odiados) {
+            if (foundData.usuarios_odiados) {
                 socialBox.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff00ff;">[HUMANOS ODIADOS]:</span> ${foundData.usuarios_odiados}</div>`;
             }
 
             // Histórico de Combate
             const combatBox = document.getElementById('blockCombatLog');
             combatBox.innerHTML = "";
-            if(foundData.historico_combates && foundData.historico_combates.length > 0) {
+            if (foundData.historico_combates && foundData.historico_combates.length > 0) {
                 foundData.historico_combates.forEach(combate => {
                     combatBox.innerHTML += `<div class="log-entry" style="color:#ffcc00;">[BATALHA]: ${combate}</div>`;
                 });
             } else {
-                if(fac === "vilao" || fac === "hostil") {
+                if (fac === "vilao" || fac === "hostil") {
                     combatBox.innerHTML = "<div class='log-entry' style='color:#ff3333;'>[ALERTA]: Registros indicam vandalismo nas fronteiras da Stickland!</div>";
-                } else if(fac === "heroi" || fac === "pacífico") {
+                } else if (fac === "heroi" || fac === "pacífico") {
                     combatBox.innerHTML = "<div class='log-entry' style='color:#00ff66;'>[PATRULHA]: Entidade detectada protegendo civis e interceptando ameaças.</div>";
                 } else {
                     combatBox.innerHTML = "<p style='color:#555;font-size:11px;'>Nenhum combate violento recente registrado na central.</p>";
@@ -672,12 +686,12 @@
         }
     });
 
-    // --- CANAL COLETIVO (CHAT) ---
+    // ── CANAL COLETIVO (CHAT) ─────────────────────────────────────────────────
     function initChat() {
         const chatWin = document.getElementById('chatWindow');
         onValue(ref(db, 'chat'), (snapshot) => {
             chatWin.innerHTML = "";
-            if(!snapshot.exists()) return;
+            if (!snapshot.exists()) return;
             snapshot.forEach(childSnap => {
                 const m = childSnap.val();
                 chatWin.innerHTML += `<div class="chat-msg"><span class="chat-time">[${new Date(m.timestamp).toLocaleTimeString()}]</span> <span style="color:${m.color || '#fff'}">${m.author}</span>: ${m.text}</div>`;
@@ -688,29 +702,34 @@
 
     document.getElementById('btnEnviarChat').addEventListener('click', () => {
         const txt = document.getElementById('chatMessage').value.trim();
-        if(!txt || !currentUser) return;
+        if (!txt || !currentUser) return;
         get(ref(db, `users/${currentUser.uid}`)).then(snap => {
             const uData = snap.val() || {};
             push(ref(db, 'chat'), {
-                author: uData.name || currentUser.displayName,
-                color: uData.color || '#00ffff',
-                text: txt,
+                author:    uData.name  || currentUser.displayName,
+                color:     uData.color || '#00ffff',
+                text:      txt,
                 timestamp: Date.now()
             });
             document.getElementById('chatMessage').value = "";
         });
     });
 
-    // --- MURAL DE POSTAGENS (FEED) ---
+    // Enviar chat com Enter
+    document.getElementById('chatMessage').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('btnEnviarChat').click();
+    });
+
+    // ── MURAL DE POSTAGENS (FEED) ─────────────────────────────────────────────
     function initFeed() {
         const feedContainer = document.getElementById('feedContainer');
         onValue(ref(db, 'feed'), (snapshot) => {
             feedContainer.innerHTML = "";
-            if(!snapshot.exists()) {
+            if (!snapshot.exists()) {
                 feedContainer.innerHTML = `<p style="color:#666;">Nenhuma transmissão feita no mural.</p>`;
                 return;
             }
-            let list = [];
+            const list = [];
             snapshot.forEach(cs => { list.unshift(cs.val()); });
             list.forEach(p => {
                 feedContainer.innerHTML += `
@@ -724,35 +743,32 @@
 
     document.getElementById('btnPostar').addEventListener('click', () => {
         const txt = document.getElementById('postText').value.trim();
-        if(!txt || !currentUser) return;
+        if (!txt || !currentUser) return;
         get(ref(db, `users/${currentUser.uid}`)).then(snap => {
             const uData = snap.val() || {};
             push(ref(db, 'feed'), {
-                author: uData.name || currentUser.displayName,
-                color: uData.color || '#ff9900',
-                text: txt,
-                date: new Date().toLocaleString('pt-BR')
+                author: uData.name  || currentUser.displayName,
+                color:  uData.color || '#ff9900',
+                text:   txt,
+                date:   new Date().toLocaleString('pt-BR')
             });
             document.getElementById('postText').value = "";
         });
     });
 
-    // --- CONFIGURAÇÕES DE PERFIL ---
+    // ── CONFIGURAÇÕES DE PERFIL ───────────────────────────────────────────────
     document.getElementById('btnSalvarPerfil').addEventListener('click', () => {
-        const newName = document.getElementById('profileName').value.trim();
+        const newName  = document.getElementById('profileName').value.trim();
         const newColor = document.getElementById('profileColor').value;
-        if(!newName || !currentUser) return alert("Defina um apelido válido.");
-        
+        if (!newName || !currentUser) return alert("Defina um apelido válido.");
+
         update(ref(db, `users/${currentUser.uid}`), {
-            name: newName,
+            name:  newName,
             color: newColor
         }).then(() => alert("Identidade Virtual atualizada na Matrix!"));
     });
 
-
-    // ========================================================
-    // --- LÓGICA DO SISTEMA MULTIPLAYER (CO-OP & AMIGOS) ---
-    // ========================================================
+    // ── LÓGICA DO SISTEMA MULTIPLAYER (CO-OP & AMIGOS) ───────────────────────
     function initMultiplayerSystem() {
         carregarListaAmigos();
         carregarSolicitacoesPendentes();
@@ -761,37 +777,41 @@
 
     // Buscar Operadores para adicionar
     document.getElementById('btnSearchUser').addEventListener('click', async () => {
-        const searchStr = document.getElementById('searchUserStr').value.trim().toLowerCase();
+        const searchStr  = document.getElementById('searchUserStr').value.trim().toLowerCase();
         const resultsDiv = document.getElementById('userSearchResults');
         resultsDiv.innerHTML = "";
-        if(!searchStr) return;
+        if (!searchStr) return;
 
         const usersSnap = await get(ref(db, 'users'));
-        if(!usersSnap.exists()) return;
+        if (!usersSnap.exists()) return;
 
         usersSnap.forEach(childSnap => {
             const u = childSnap.val();
-            if(u.uid !== currentUser.uid && u.name.toLowerCase().includes(searchStr)) {
+            if (u.uid !== currentUser.uid && u.name && u.name.toLowerCase().includes(searchStr)) {
                 const card = document.createElement('div');
                 card.className = "friend-card";
                 card.innerHTML = `
-                    <span style="color:${u.color}">${u.name}</span>
+                    <span style="color:${u.color || '#fff'}">${u.name}</span>
                     <button class="add-btn" data-uid="${u.uid}" style="padding:5px 10px; font-size:11px; background:#ff9900;">Enviar Solicitação</button>
                 `;
                 resultsDiv.appendChild(card);
-                
+
                 card.querySelector('.add-btn').addEventListener('click', async () => {
-                    const snapUser = await get(ref(db, `users/${currentUser.uid}`));
+                    const snapUser       = await get(ref(db, `users/${currentUser.uid}`));
                     const meuNomeAtualizado = snapUser.exists() ? snapUser.val().name : currentUser.displayName;
-                    
-                    set(ref(db, `friend_requests/${u.uid}/${currentUser.uid}`), {
-                        uid: currentUser.uid,
+
+                    await set(ref(db, `friend_requests/${u.uid}/${currentUser.uid}`), {
+                        uid:  currentUser.uid,
                         name: meuNomeAtualizado
                     });
                     alert(`Solicitação enviada para ${u.name}!`);
                 });
             }
         });
+
+        if (resultsDiv.innerHTML === "") {
+            resultsDiv.innerHTML = `<p style="color:#666; font-size:12px;">Nenhum operador encontrado.</p>`;
+        }
     });
 
     // Listar Amigos Adicionados
@@ -799,38 +819,36 @@
         onValue(ref(db, `friends/${currentUser.uid}`), (snapshot) => {
             const container = document.getElementById('friendsListContainer');
             container.innerHTML = "";
-            if(!snapshot.exists()) {
+            if (!snapshot.exists()) {
                 container.innerHTML = `<p style="color:#666; font-size:12px;">Nenhum amigo adicionado ainda.</p>`;
                 return;
             }
             snapshot.forEach(childSnap => {
-                const f = childSnap.val();
+                const f    = childSnap.val();
                 const card = document.createElement('div');
                 card.className = "friend-card";
                 card.innerHTML = `
                     <span style="color:#00ffff;">[ON] ${f.name}</span>
                     <div style="display:flex; gap:5px;">
                         <button class="invite-btn" style="background:#00ff66; padding:5px 10px; font-size:11px;">Convidar pro PC</button>
-                        <button class="visit-btn" style="background:#00ffff; color:#000; padding:5px 10px; font-size:11px;">Visitar PC</button>
+                        <button class="visit-btn"  style="background:#00ffff; color:#000; padding:5px 10px; font-size:11px;">Visitar PC</button>
                     </div>
                 `;
                 container.appendChild(card);
 
-                // Convidar Amigo para a SUA sala
                 card.querySelector('.invite-btn').addEventListener('click', async () => {
-                    const snapUser = await get(ref(db, `users/${currentUser.uid}`));
+                    const snapUser          = await get(ref(db, `users/${currentUser.uid}`));
                     const meuNomeAtualizado = snapUser.exists() ? snapUser.val().name : currentUser.displayName;
 
-                    set(ref(db, `multiplayer_invites/${f.uid}`), {
-                        hostUid: currentUser.uid,
+                    await set(ref(db, `multiplayer_invites/${f.uid}`), {
+                        hostUid:  currentUser.uid,
                         hostName: meuNomeAtualizado,
-                        status: "pending"
+                        status:   "pending"
                     });
                     entrarNaSalaFakePC(currentUser.uid, `Seu Próprio Desktop (Host)`);
                     alert("Convite enviado! Aguardando o amigo entrar na sala...");
                 });
 
-                // Visitar a sala do AMIGO
                 card.querySelector('.visit-btn').addEventListener('click', () => {
                     entrarNaSalaFakePC(f.uid, `Desktop de ${f.name}`);
                 });
@@ -843,14 +861,14 @@
         onValue(ref(db, `friend_requests/${currentUser.uid}`), (snapshot) => {
             const container = document.getElementById('friendRequestsContainer');
             container.innerHTML = "";
-            if(!snapshot.exists()) {
+            if (!snapshot.exists()) {
                 container.innerHTML = `<p style="color:#666; font-size:12px;">Nenhuma solicitação pendente.</p>`;
                 return;
             }
             snapshot.forEach(childSnap => {
-                const req = childSnap.val();
+                const req  = childSnap.val();
                 const card = document.createElement('div');
-                card.className = "friend-card";
+                card.className       = "friend-card";
                 card.style.borderColor = "#ff9900";
                 card.innerHTML = `
                     <span style="color:#ff9900;">${req.name}</span>
@@ -859,10 +877,10 @@
                 container.appendChild(card);
 
                 card.querySelector('.accept-btn').addEventListener('click', async () => {
-                    const snapUser = await get(ref(db, `users/${currentUser.uid}`));
+                    const snapUser          = await get(ref(db, `users/${currentUser.uid}`));
                     const meuNomeAtualizado = snapUser.exists() ? snapUser.val().name : currentUser.displayName;
 
-                    await set(ref(db, `friends/${currentUser.uid}/${req.uid}`), { uid: req.uid, name: req.name });
+                    await set(ref(db, `friends/${currentUser.uid}/${req.uid}`), { uid: req.uid,         name: req.name });
                     await set(ref(db, `friends/${req.uid}/${currentUser.uid}`), { uid: currentUser.uid, name: meuNomeAtualizado });
                     await remove(ref(db, `friend_requests/${currentUser.uid}/${req.uid}`));
                     alert("Amizade firmada na Matrix!");
@@ -874,10 +892,10 @@
     // Ouvir Convites de Salas Multiplayer
     function ouvirConvitesMultiplayer() {
         onValue(ref(db, `multiplayer_invites/${currentUser.uid}`), (snapshot) => {
-            if(!snapshot.exists()) return;
+            if (!snapshot.exists()) return;
             const inv = snapshot.val();
-            if(inv.status === "pending") {
-                if(confirm(`${inv.hostName} está te chamando para monitorar o PC dele. Aceitar incursão?`)) {
+            if (inv.status === "pending") {
+                if (confirm(`${inv.hostName} está te chamando para monitorar o PC dele. Aceitar incursão?`)) {
                     update(ref(db, `multiplayer_invites/${currentUser.uid}`), { status: "accepted" });
                     entrarNaSalaFakePC(inv.hostUid, `Desktop de ${inv.hostName}`);
                 } else {
@@ -887,93 +905,87 @@
         });
     }
 
-    // --- RENDERIZAR O PC FAKE RETRO ---
+    // ── PC FAKE RETRO ─────────────────────────────────────────────────────────
     function entrarNaSalaFakePC(roomUid, titleText) {
-        document.getElementById('roomTitle').innerText = `[SALA] ${titleText.toUpperCase()}`;
-        document.getElementById('fake-pc-room').style.display = "block";
-        
-        currentRoomRef = ref(db, `rooms/${roomUid}`);
+        document.getElementById('roomTitle').innerText           = `[SALA] ${titleText.toUpperCase()}`;
+        document.getElementById('fake-pc-room').style.display   = "block";
 
+        currentRoomRef = ref(db, `rooms/${roomUid}`);
         ouvirElementosDaSala();
 
+        // Remove listener anterior para evitar duplicação
+        document.getElementById('fake-pc-room').removeEventListener('mousemove', enviarPosicaoMouse);
         document.getElementById('fake-pc-room').addEventListener('mousemove', enviarPosicaoMouse);
     }
 
     function enviarPosicaoMouse(e) {
-        if(!currentRoomRef || !currentUser) return;
-        const canvas = document.getElementById('multiplayer-canvas');
+        if (!currentRoomRef || !currentUser) return;
+        const canvas     = document.getElementById('multiplayer-canvas');
         const canvasRect = canvas.getBoundingClientRect();
-        
-        const pctX = ((e.clientX - canvasRect.left) / canvasRect.width) * 100;
-        const pctY = ((e.clientY - canvasRect.top) / canvasRect.height) * 100;
+
+        const pctX = ((e.clientX - canvasRect.left)  / canvasRect.width)  * 100;
+        const pctY = ((e.clientY - canvasRect.top)   / canvasRect.height) * 100;
 
         get(ref(db, `users/${currentUser.uid}`)).then(snap => {
             const meuNome = snap.exists() ? snap.val().name : currentUser.displayName;
             update(child(currentRoomRef, `cursors/${currentUser.uid}`), {
-                x: pctX,
-                y: pctY,
-                name: meuNome,
+                x:        pctX,
+                y:        pctY,
+                name:     meuNome,
                 lastSeen: Date.now()
             });
         });
     }
 
     function ouvirElementosDaSala() {
-        if(!currentRoomRef) return;
+        if (!currentRoomRef) return;
 
         onValue(currentRoomRef, (snapshot) => {
             const canvas = document.getElementById('multiplayer-canvas');
-            
+
             // Remove cursores antigos
             document.querySelectorAll('.multiplayer-cursor').forEach(c => c.remove());
 
-            if(!snapshot.exists()) return;
+            if (!snapshot.exists()) return;
             const roomData = snapshot.val();
 
-            // 1. Renderizar cursores remotos (dos amigos na sala)
-            if(roomData.cursors) {
+            if (roomData.cursors) {
                 Object.keys(roomData.cursors).forEach(uid => {
-                    if(uid === currentUser.uid) return; // Não desenhar o próprio mouse
-                    
-                    const mouse = roomData.cursors[uid];
-                    // Se o mouse ficou parado muito tempo (10s), ignora (timeout de segurança)
-                    if(Date.now() - mouse.lastSeen > 10000) return;
-                    
-                    const cursorImg = document.createElement('div');
-                    cursorImg.className = "multiplayer-cursor";
-                    cursorImg.style.left = `${mouse.x}%`;
-                    cursorImg.style.top = `${mouse.y}%`;
-                    
-                    // Coloca a imagem image_0fd01b.png como background
-                    cursorImg.style.backgroundImage = "url('image_0fd01b.png')";
-                    cursorImg.style.backgroundSize = "contain";
-                    cursorImg.style.backgroundRepeat = "no-repeat";
-                    cursorImg.style.backgroundColor = "transparent";
-                    cursorImg.style.border = "none";
-                    cursorImg.style.width = "24px";
-                    cursorImg.style.height = "24px";
+                    if (uid === currentUser.uid) return;
 
-                    // Coloca o nome do amigo em cima do mouse dele
-                    const nameTag = document.createElement('span');
-                    nameTag.innerText = mouse.name;
-                    nameTag.style.position = "absolute";
-                    nameTag.style.top = "-15px";
-                    nameTag.style.left = "15px";
-                    nameTag.style.color = "#00ffff";
-                    nameTag.style.background = "#000";
-                    nameTag.style.padding = "2px 4px";
-                    nameTag.style.fontSize = "10px";
-                    nameTag.style.border = "1px solid #00ffff";
-                    
-                    cursorImg.appendChild(nameTag);
-                    canvas.appendChild(cursorImg);
+                    const mouse = roomData.cursors[uid];
+                    if (Date.now() - mouse.lastSeen > 10000) return;
+
+                    const cursorEl = document.createElement('div');
+                    cursorEl.className        = "multiplayer-cursor";
+                    cursorEl.style.position   = "absolute";
+                    cursorEl.style.left       = `${mouse.x}%`;
+                    cursorEl.style.top        = `${mouse.y}%`;
+                    cursorEl.style.width      = "24px";
+                    cursorEl.style.height     = "24px";
+                    cursorEl.style.backgroundImage  = "url('image_0fd01b.png')";
+                    cursorEl.style.backgroundSize   = "contain";
+                    cursorEl.style.backgroundRepeat = "no-repeat";
+                    cursorEl.style.backgroundColor  = "transparent";
+                    cursorEl.style.border           = "none";
+
+                    const nameTag           = document.createElement('span');
+                    nameTag.innerText       = mouse.name;
+                    nameTag.style.cssText   = `
+                        position:absolute; top:-15px; left:15px;
+                        color:#00ffff; background:#000;
+                        padding:2px 4px; font-size:10px;
+                        border:1px solid #00ffff; white-space:nowrap;
+                    `;
+                    cursorEl.appendChild(nameTag);
+                    canvas.appendChild(cursorEl);
                 });
             }
         });
     }
 
     document.getElementById('btnSairSala').addEventListener('click', () => {
-        if(currentRoomRef && currentUser) {
+        if (currentRoomRef && currentUser) {
             remove(child(currentRoomRef, `cursors/${currentUser.uid}`));
         }
         document.getElementById('fake-pc-room').removeEventListener('mousemove', enviarPosicaoMouse);
@@ -981,3 +993,5 @@
         currentRoomRef = null;
     });
 </script>
+</body>
+</html>
