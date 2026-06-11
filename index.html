@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Central - Stickman HUD</title>
+    <style>
+        /* Estilo Retro / Newgrounds / Hacker */
+        body {
+            background-color: #1a1a1a;
+            color: #d3d3d3;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+        }
+        .hud-container {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 3px solid #ff9900; /* Laranja clássico */
+            background-color: #2b2b2b;
+            padding: 20px;
+            box-shadow: 0px 0px 15px #ff990055;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px dashed #ff9900;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #ffcc00;
+            margin: 0;
+            text-transform: uppercase;
+        }
+        .status-bar {
+            color: #00ff66;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input[type="text"], input[type="email"] {
+            flex: 1;
+            padding: 10px;
+            background: #111;
+            border: 1px solid #ff9900;
+            color: #00ffff;
+            font-family: inherit;
+        }
+        button {
+            background: #ff9900;
+            color: #111;
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        button:hover { background: #ffcc00; }
+        
+        /* Perfil da Entidade */
+        .profile { display: none; } /* Escondido até pesquisar */
+        .profile-header {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            background: #111;
+            padding: 15px;
+            border: 1px solid #444;
+        }
+        .avatar-img {
+            width: 120px;
+            height: 120px;
+            border: 2px solid #00ffff;
+            background: #000;
+            object-fit: contain;
+        }
+        .stats { flex: 1; }
+        .stats p { margin: 5px 0; }
+        .highlight { color: #ff00ff; font-weight: bold; }
+        
+        /* Log de Memória */
+        .memory-log {
+            margin-top: 20px;
+            background: #000;
+            border: 1px solid #444;
+            padding: 10px;
+            height: 250px;
+            overflow-y: auto;
+        }
+        .log-entry { margin-bottom: 10px; border-bottom: 1px solid #222; padding-bottom: 5px;}
+        .log-user { color: #00ffff; }
+        .log-ai { color: #ff3333; }
+    </style>
+</head>
+<body>
+
+<div class="hud-container">
+    <div class="header">
+        <h1>NÚCLEO DE CONSCIÊNCIA CENTRAL</h1>
+        <p>Acesso obrigatório para estabilização de memórias.</p>
+    </div>
+
+    <div class="search-box">
+        <input type="email" id="userEmail" placeholder="Seu E-mail de Desenvolvedor...">
+    </div>
+
+    <div class="status-bar" id="connectionStatus">
+        [!] CONEXÃO NEURAL: INATIVA - INSIRA E-MAIL PARA INICIAR
+    </div>
+
+    <div class="search-box" id="searchArea" style="display:none;">
+        <input type="text" id="stickmanName" placeholder="Digite o nome exato do Stickman...">
+        <button onclick="buscarMemoria()">Acessar Mente</button>
+    </div>
+
+    <div class="profile" id="profilePanel">
+        <div class="profile-header">
+            <img id="stickAvatar" class="avatar-img" src="" alt="Avatar do Stickman">
+            <div class="stats">
+                <h2 style="margin-top:0; color: #00ffff;" id="stickName">NOME DA ENTIDADE</h2>
+                <p>Data de Ignição: <span class="highlight" id="stickDate">--/--/----</span></p>
+                <p>Mortes Sofridas: <span class="highlight" style="color:red;" id="stickDeaths">0</span></p>
+            </div>
+        </div>
+
+        <h3 style="color: #ff9900; margin-top: 20px;">[ LOG DE MEMÓRIA ]</h3>
+        <div class="memory-log" id="memoryLog">
+            </div>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // COLOQUE A URL DO SEU FIREBASE AQUI EMBAIXO
+    // ==========================================
+    const FIREBASE_URL = "https://SEU-PROJETO-AQUI-default-rtdb.firebaseio.com";
+    let isConnected = false;
+
+    // Detecta o e-mail para simular o login e iniciar o Heartbeat
+    document.getElementById('userEmail').addEventListener('input', function(e) {
+        if(e.target.value.includes('@')) {
+            isConnected = true;
+            document.getElementById('connectionStatus').innerText = "[+] CONEXÃO NEURAL: ESTÁVEL E ATIVA";
+            document.getElementById('searchArea').style.display = "flex";
+            document.getElementById('userEmail').disabled = true; // Trava o e-mail
+        }
+    });
+
+    // O "Heartbeat" (Batimento Cardíaco): Avisa o Python que o site tá aberto
+    setInterval(() => {
+        if (isConnected) {
+            fetch(`${FIREBASE_URL}/server_status.json`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_online: true, last_ping: Date.now() })
+            }).catch(err => console.log("Erro no ping:", err));
+        }
+    }, 5000); // Roda a cada 5 segundos
+
+    // Função para puxar os dados do Stickman
+    async function buscarMemoria() {
+        const nome = document.getElementById('stickmanName').value.trim();
+        if (!nome) return;
+
+        try {
+            const resposta = await fetch(`${FIREBASE_URL}/stickmans/${nome}.json`);
+            const dados = await resposta.json();
+
+            if (dados) {
+                document.getElementById('profilePanel').style.display = "block";
+                document.getElementById('stickName').innerText = nome;
+                document.getElementById('stickDate').innerText = dados.criacao || "Desconhecida";
+                document.getElementById('stickDeaths').innerText = dados.mortes || "0";
+                
+                // Renderiza a imagem PNG a partir do texto Base64
+                if(dados.avatar_b64) {
+                    document.getElementById('stickAvatar').src = `data:image/png;base64,${dados.avatar_b64}`;
+                } else {
+                    document.getElementById('stickAvatar').src = ""; 
+                }
+
+                // Renderiza as memórias (conversas)
+                const log = document.getElementById('memoryLog');
+                log.innerHTML = ""; // Limpa a tela anterior
+                if(dados.memory && dados.memory.length > 0) {
+                    dados.memory.forEach(conversa => {
+                        log.innerHTML += `
+                            <div class="log-entry">
+                                <span class="log-user">User:</span> ${conversa.user}<br>
+                                <span class="log-ai">${nome}:</span> ${conversa.ai}
+                            </div>
+                        `;
+                    });
+                    // Rola pro final automaticamente
+                    log.scrollTop = log.scrollHeight;
+                } else {
+                    log.innerHTML = "<p style='color: #666;'>Nenhuma memória registrada ainda. Mente em branco.</p>";
+                }
+            } else {
+                alert("Entidade não encontrada na Matrix. Crie ela no seu PC primeiro!");
+            }
+        } catch (error) {
+            console.error("Erro ao buscar na Matrix:", error);
+            alert("Erro de conexão com o banco de dados.");
+        }
+    }
+</script>
+
+</body>
+</html>
