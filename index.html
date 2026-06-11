@@ -3,54 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stickland - Matrix HUD</title>
+    <title>Stickland - Rede Social Matrix</title>
     <style>
-        /* Estilo Retro / Newgrounds / Hacker */
+        /* Estilo Retro / Newgrounds / Hacker Avançado */
         body {
-            background-color: #1a1a1a;
+            background-color: #121212;
             color: #d3d3d3;
             font-family: 'Courier New', Courier, monospace;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
         }
-        .hud-container {
-            max-width: 800px;
+        
+        .main-wrapper {
+            max-width: 950px;
             margin: 0 auto;
             border: 3px solid #ff9900;
-            background-color: #2b2b2b;
-            padding: 20px;
-            box-shadow: 0px 0px 15px #ff990055;
+            background-color: #1e1e1e;
+            box-shadow: 0px 0px 20px #ff990033;
         }
+
         .header {
             text-align: center;
             border-bottom: 2px dashed #ff9900;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+            padding: 15px;
+            background: #1a1a1a;
         }
         .header h1 {
             color: #ffcc00;
             margin: 0;
             text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 24px;
         }
+
+        /* Menu de Abas (Navegação do Site Real) */
+        .nav-tabs {
+            display: none; /* Só aparece logado */
+            background: #111;
+            border-bottom: 2px solid #ff9900;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: transparent;
+            color: #888;
+            border: none;
+            padding: 12px 20px;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            border-right: 1px solid #222;
+        }
+        .tab-btn:hover { color: #ffcc00; background: #222; }
+        .tab-btn.active {
+            color: #111;
+            background: #ff9900;
+        }
+
         .status-bar {
             color: #ff3333;
             font-weight: bold;
             text-align: center;
-            margin-bottom: 20px;
+            padding: 10px;
+            background: #000;
+            font-size: 13px;
         }
-        .search-box {
+
+        /* Conteúdo das Abas */
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+        .tab-content.active { display: block; }
+
+        /* Elementos de Formulários Gerais */
+        .search-box, .post-box, .chat-box {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
-            justify-content: center;
         }
-        input[type="text"] {
+        input[type="text"], textarea, select {
             flex: 1;
             padding: 10px;
-            background: #111;
-            border: 1px solid #ff9900;
+            background: #0a0a0a;
+            border: 1px solid #444;
             color: #00ffff;
             font-family: inherit;
+        }
+        input[type="text"]:focus, textarea:focus {
+            border-color: #ff9900;
+            outline: none;
         }
         button {
             background: #ff9900;
@@ -66,89 +108,204 @@
         .google-btn {
             background: #df4a32;
             color: white;
-            font-size: 14px;
-            border: none;
-            padding: 12px 24px;
-            font-weight: bold;
-            cursor: pointer;
+            font-size: 15px;
+            padding: 15px 30px;
             display: flex;
             align-items: center;
             gap: 10px;
-            text-transform: uppercase;
+            margin: 40px auto;
         }
         .google-btn:hover { background: #ff5c42; }
 
-        /* Perfil da Entidade */
-        .profile { display: none; }
+        /* Estilo da Busca de Entidades (HUD) */
         .profile-header {
             display: flex;
             gap: 20px;
             align-items: center;
-            background: #111;
+            background: #0a0a0a;
             padding: 15px;
-            border: 1px solid #444;
+            border: 1px solid #ff990088;
+            margin-top: 15px;
         }
         .avatar-img {
-            width: 120px;
-            height: 120px;
+            width: 110px;
+            height: 110px;
             border: 2px solid #00ffff;
             background: #000;
             object-fit: contain;
         }
-        .stats { flex: 1; }
-        .stats p { margin: 5px 0; }
         .highlight { color: #ff00ff; font-weight: bold; }
-        
-        /* Log de Memória */
         .memory-log {
-            margin-top: 20px;
+            margin-top: 15px;
             background: #000;
-            border: 1px solid #444;
+            border: 1px solid #333;
             padding: 10px;
-            height: 250px;
+            height: 220px;
             overflow-y: auto;
         }
-        .log-entry { margin-bottom: 10px; border-bottom: 1px solid #222; padding-bottom: 5px;}
+        .log-entry { margin-bottom: 8px; border-bottom: 1px solid #1a1a1a; padding-bottom: 4px; font-size: 13px;}
         .log-user { color: #00ffff; }
         .log-ai { color: #ff3333; }
+
+        /* Estilo do Feed de Posts e Redes Sociais */
+        .post-card {
+            background: #151515;
+            border-left: 4px solid #ff9900;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #222;
+        }
+        .post-meta {
+            font-size: 12px;
+            color: #777;
+            margin-bottom: 5px;
+        }
+        .post-author { font-weight: bold; }
+        .post-body { color: #eee; font-size: 14px; word-break: break-all; }
+
+        /* Estilo das Comunidades / Grupos */
+        .group-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+        }
+        .group-card {
+            background: #0a0a0a;
+            border: 1px solid #333;
+            padding: 15px;
+            text-align: center;
+        }
+        .group-card h3 { margin: 0 0 10px 0; color: #ffcc00; }
+
+        /* Sala de Chat Virtual */
+        .chat-container {
+            background: #000;
+            border: 1px solid #444;
+            height: 300px;
+            overflow-y: auto;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        .chat-msg { margin-bottom: 10px; font-size: 13px; }
+        .chat-time { color: #555; font-size: 11px; }
+
+        /* Customização de Perfil */
+        .edit-profile {
+            background: #111;
+            padding: 20px;
+            border: 1px dashed #555;
+            max-width: 400px;
+        }
     </style>
 </head>
 <body>
 
-<div class="hud-container">
+<div class="main-wrapper">
     <div class="header">
-        <h1>NÚCLEO DE CONSCIÊNCIA - STICKLAND</h1>
-        <p>Acesso obrigatório para estabilização de memórias.</p>
+        <h1>SISTEMA OPERACIONAL STICKLAND</h1>
+        <p style="margin:5px 0 0 0; color: #888; font-size: 12px;">Rede Descentralizada de Consciências & Conexões</p>
     </div>
 
-    <div class="search-box" id="authArea">
+    <div id="authArea" style="text-align: center;">
         <button class="google-btn" id="btnGoogle">
             <svg style="width:18px; height:18px" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35,11.1H12V12.9H19.6C19.2,15 17.5,16.8 15.3,17.5V19.3H19.7C22.3,16.9 23.8,13.3 23.8,9.1C23.8,8.5 23.7,7.9 23.5,7.3H12V9.1H19.7C19.6,9.8 19.3,10.5 18.9,11.1H21.35M12,18C9.3,18 7,16.2 6.1,13.7H1.6V15.5C3.4,19.1 7.1,21.5 11.5,21.5C14.3,21.5 16.9,20.5 18.8,18.8L15.3,16.1C14.2,16.9 12.9,17.4 11.5,17.4C8.9,17.4 6.7,15.7 5.9,13.3H1.4V15.1C2.9,18 5.9,20 9.5,20C10.3,20 11.2,19.9 12,19.7V18M2.2,10.7C2,10.1 1.9,9.5 1.9,8.9C1.9,8.3 2,7.7 2.2,7.1V5.3H0.3C0.1,5.9 0,6.5 0,7.1C0,7.8 0.1,8.4 0.3,9H2.2V10.7M11.5,3.5C13.1,3.5 14.5,4.1 15.6,5.1L18.4,2.3C16.6,0.9 14.3,0 11.5,0C7.1,0 3.4,2.4 1.6,6C1.6,6 1.6,6.1 1.6,6.1L4.1,8.1C4.9,5.5 7.4,3.5 10.5,3.5C10.8,3.5 11.2,3.5 11.5,3.5Z"/></svg>
-            Entrar com a Conta Google
+            Autenticar Terminal via Google
         </button>
     </div>
 
     <div class="status-bar" id="connectionStatus">
-        [!] CONEXÃO NEURAL: INATIVA - REQUISITA AUTENTICAÇÃO DO GOOGLE
+        [!] CONEXÃO NEURAL: INATIVA - REQUISITA DECODIFICAÇÃO DE CONTA
     </div>
 
-    <div class="search-box" id="searchArea" style="display:none;">
-        <input type="text" id="stickmanName" placeholder="Digite o nome exato do Stickman...">
-        <button id="btnBuscar">Acessar Mente</button>
+    <div class="nav-tabs" id="mainNav">
+        <button class="tab-btn active" onclick="switchTab('hud')">Matrix HUD</button>
+        <button class="tab-btn" onclick="switchTab('feed')">Feed Global</button>
+        <button class="tab-btn" onclick="switchTab('grupos')">Grupos</button>
+        <button class="tab-btn" onclick="switchTab('chat')">Chat Online</button>
+        <button class="tab-btn" onclick="switchTab('perfil')">Meu Perfil</button>
     </div>
 
-    <div class="profile" id="profilePanel">
-        <div class="profile-header">
-            <img id="stickAvatar" class="avatar-img" src="" alt="Avatar do Stickman">
-            <div class="stats">
-                <h2 style="margin-top:0; color: #00ffff;" id="stickName">NOME DA ENTIDADE</h2>
-                <p>Data de Ignição: <span class="highlight" id="stickDate">--/--/----</span></p>
-                <p>Mortes Sofridas: <span class="highlight" style="color:red;" id="stickDeaths">0</span></p>
-            </div>
+    <div id="tab-hud" class="tab-content active">
+        <h3 style="color: #ff9900; margin-top:0;">[ CONSULTAR BANCO DE CONSCIÊNCIA ]</h3>
+        <p style="font-size:12px; color:#aaa;">Qualquer Stickman vivo ou gerado por IA em sua conta pode ter suas memórias lidas remotamente aqui.</p>
+        <div class="search-box">
+            <input type="text" id="stickmanName" placeholder="Digite o codinome do Stickman para sincronizar...">
+            <button id="btnBuscar">Acessar Mente</button>
         </div>
 
-        <h3 style="color: #ff9900; margin-top: 20px;">[ LOG DE MEMÓRIA ]</h3>
-        <div class="memory-log" id="memoryLog">
+        <div id="profilePanel" style="display:none;">
+            <div class="profile-header">
+                <img id="stickAvatar" class="avatar-img" src="" alt="Avatar do Stickman">
+                <div class="stats">
+                    <h2 style="margin-top:0; color: #00ffff;" id="stickName">NOME DA ENTIDADE</h2>
+                    <p>Injeção de Sistema: <span class="highlight" id="stickDate">--/--/----</span></p>
+                    <p>Baixas em Combate: <span class="highlight" style="color:red;" id="stickDeaths">0</span></p>
+                </div>
+            </div>
+            <h4 style="color: #ff9900; margin-bottom: 5px; text-transform: uppercase;">[ Registro Fluido de Memórias ]</h4>
+            <div class="memory-log" id="memoryLog"></div>
+        </div>
+    </div>
+
+    <div id="tab-feed" class="tab-content">
+        <h3 style="color: #ff9900; margin-top:0;">[ MURAL DE POSTAGENS ]</h3>
+        <div style="background:#111; padding:15px; border:1px solid #333; margin-bottom:20px;">
+            <p style="margin:0 0 10px 0; font-size:12px;">O que está acontecendo em Stickland agora?</p>
+            <div style="display:flex; gap:10px;">
+                <textarea id="postText" placeholder="Compartilhe bugs, recordes ou logs de IA..." rows="2" style="background:#050505; color:#fff; font-family:inherit; padding:8px; border:1px solid #444; flex:1; resize:none;"></textarea>
+                <button id="btnPostar" style="height:fit-content; align-self:center;">Publicar</button>
+            </div>
+        </div>
+        <div id="feedContainer">
+            <p style="color:#666;">Carregando atualizações da Matrix...</p>
+        </div>
+    </div>
+
+    <div id="tab-grupos" class="tab-content">
+        <h3 style="color: #ff9900; margin-top:0;">[ CLÃS E COMUNIDADES ]</h3>
+        <div class="group-grid">
+            <div class="group-card">
+                <h3>Desenvolvedores Lua</h3>
+                <p style="font-size:12px; color:#aaa;">Sandbox, integrações de comandos e melhorias do Paint Studio.</p>
+                <button onclick="alert('Você entrou no clã de Desenvolvimento!')" style="padding:5px 10px; font-size:11px;">Entrar no Grupo</button>
+            </div>
+            <div class="group-card">
+                <h3>Fundação SCP</h3>
+                <p style="font-size:12px; color:#aaa;">Estudos de entidades perigosas infiltradas no desktop.</p>
+                <button onclick="alert('Contido. Protegido. Protegido!')" style="padding:5px 10px; font-size:11px;">Entrar no Grupo</button>
+            </div>
+            <div class="group-card">
+                <h3>Caçadores de Void</h3>
+                <p style="font-size:12px; color:#aaa;">Fãs e criadores dedicados a caçar mistérios nas fendas de Stickland.</p>
+                <button onclick="alert('Membro registrado!')" style="padding:5px 10px; font-size:11px;">Entrar no Grupo</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-chat" class="tab-content">
+        <h3 style="color: #ff9900; margin-top:0;">[ CANAL COLETIVO DE TERMINAIS ]</h3>
+        <div class="chat-container" id="chatWindow"></div>
+        <div class="chat-box">
+            <input type="text" id="chatMessage" placeholder="Transmita uma mensagem para a rede...">
+            <button id="btnEnviarChat">Enviar</button>
+        </div>
+    </div>
+
+    <div id="tab-perfil" class="tab-content">
+        <h3 style="color: #ff9900; margin-top:0;">[ IDENTIDADE VIRTUAL ]</h3>
+        <div class="edit-profile">
+            <label style="font-size:12px; display:block; margin-bottom:5px;">Apelido de Rede:</label>
+            <input type="text" id="profileName" style="margin-bottom:15px; width:-webkit-fill-available;"><br>
+            
+            <label style="font-size:12px; display:block; margin-bottom:5px;">Cor do seu Codinome:</label>
+            <select id="profileColor" style="margin-bottom:20px; width:100%; background:#0a0a0a; color:#fff; padding:10px; border:1px solid #444;">
+                <option value="#00ffff" style="color:#00ffff;">Ciano Hacker</option>
+                <option value="#ff9900" style="color:#ff9900;">Laranja Retro</option>
+                <option value="#ff00ff" style="color:#ff00ff;">Neon Magenta</option>
+                <option value="#00ff66" style="color:#00ff66;">Verde Ácido</option>
+            </select>
+            
+            <button id="btnSalvarPerfil">Gravar Alterações</button>
         </div>
     </div>
 </div>
@@ -156,8 +313,9 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+    import { getDatabase, ref, set, push, onValue, get, child } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
-    // TODO: COLOQUE AS CREDENCIAIS DO SEU PROJETO DO FIREBASE AQUI!
+    // Credenciais Oficiais Atualizadas do seu Firebase Stickland
     const firebaseConfig = {
         apiKey: "AIzaSyA2hBfWW0bTd-N9ky95AJEweP6SyNMogyY",
         authDomain: "stickland-3ccaa.firebaseapp.com",
@@ -168,60 +326,181 @@
         appId: "1:285348004391:web:0c00837f0f387961da0402"
     };
 
-    const FIREBASE_URL = firebaseConfig.databaseURL;
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getDatabase(app);
     const provider = new GoogleAuthProvider();
 
-    let isConnected = false;
+    let userSession = {
+        uid: "",
+        displayName: "Operador Anonimo",
+        customName: "",
+        color: "#00ffff"
+    };
 
-    // Escuta o clique do botão Google diretamente dentro do módulo
+    // Sistema Global de Abas
+    window.switchTab = function(tabName) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById(`tab-${tabName}`).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+
+    // Login com Janela Popup do Google
     document.getElementById('btnGoogle').addEventListener('click', () => {
         signInWithPopup(auth, provider)
-            .then((result) => {
-                isConnected = true;
+            .then(async (result) => {
+                userSession.uid = result.user.uid;
+                userSession.displayName = result.user.displayName;
                 
+                // Atualizar Status Visual
                 const statusElement = document.getElementById('connectionStatus');
-                statusElement.innerText = `[+] CONEXÃO NEURAL DE STICKLAND: ESTÁVEL E ATIVA (${result.user.displayName})`;
+                statusElement.innerText = `[+] TERMINAL AUTENTICADO: OPERANDO COMO ${result.user.displayName.toUpperCase()}`;
                 statusElement.style.color = "#00ff66";
                 
-                document.getElementById('searchArea').style.display = "flex";
-                document.getElementById('authArea').style.display = 'none';
+                document.getElementById('mainNav').style.display = "flex";
+                document.getElementById('authArea').style.display = "none";
+                
+                // Puxar customizações do banco de dados (se houver)
+                const snapshot = await get(ref(db, `users/${userSession.uid}`));
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    userSession.customName = data.customName || "";
+                    userSession.color = data.color || "#00ffff";
+                }
+                
+                document.getElementById('profileName').value = userSession.customName || userSession.displayName;
+                document.getElementById('profileColor').value = userSession.color;
+
+                // Ativar escutas contínuas em tempo real
+                startRealtimeListeners();
             })
             .catch((error) => {
-                console.error("Erro ao autenticar:", error);
-                alert("Erro ao conectar com sua conta Google! Verifique se os 'Authorized Domains' estão configurados no console do Firebase.");
+                console.error("Erro no Login:", error);
+                alert("Falha de autenticação. Confirme se adicionou matheusbemcipriamo-beep.github.io no console do Firebase!");
             });
     });
 
-    // Heartbeat contínuo alertando o script Python
-    setInterval(() => {
-        if (isConnected) {
-            fetch(`${FIREBASE_URL}/server_status.json`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ is_online: true, last_ping: Date.now() })
-            }).catch(err => console.log("Erro no ping:", err));
-        }
-    }, 5000); 
+    // Funções em Tempo Real (Feed de Notícias e Chat Global)
+    function startRealtimeListeners() {
+        // 1. Escutar Novas Postagens no Feed
+        onValue(ref(db, 'feed_posts'), (snapshot) => {
+            const feedContainer = document.getElementById('feedContainer');
+            feedContainer.innerHTML = "";
+            if(snapshot.exists()) {
+                const posts = [];
+                snapshot.forEach(childSnap => {
+                    posts.unshift({ id: childSnap.key, ...childSnap.val() }); // Coloca os mais novos no topo
+                });
+                posts.forEach(post => {
+                    feedContainer.innerHTML += `
+                        <div class="post-card">
+                            <div class="post-meta">Enviado por <span class="post-author" style="color:${post.color || '#ff9900'}">${post.author}</span> em ${post.date}</div>
+                            <div class="post-body">${post.text}</div>
+                        </div>
+                    `;
+                });
+            } else {
+                feedContainer.innerHTML = "<p style='color:#666;'>Nenhuma atividade registrada na timeline.</p>";
+            }
+        });
 
-    // Escuta o clique do botão de buscar memória
+        // 2. Escutar Chat de Terminais Compartilhados
+        onValue(ref(db, 'global_chat'), (snapshot) => {
+            const chatWindow = document.getElementById('chatWindow');
+            chatWindow.innerHTML = "";
+            if(snapshot.exists()) {
+                snapshot.forEach(childSnap => {
+                    const msg = childSnap.val();
+                    chatWindow.innerHTML += `
+                        <div class="chat-msg">
+                            <span class="chat-time">[${msg.time}]</span> 
+                            <span style="color:${msg.color || '#fff'}; font-weight:bold;">${msg.sender}:</span> ${msg.text}
+                        </div>
+                    `;
+                });
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            } else {
+                chatWindow.innerHTML = "<p style='color:#444;'>Canal vazio. Digite algo abaixo.</p>";
+            }
+        });
+        
+        // Loop Heartbeat para o Python saber que o site está aberto
+        setInterval(() => {
+            set(ref(db, 'server_status'), { is_online: true, last_ping: Date.now() })
+                .catch(err => console.log("Erro no ping:", err));
+        }, 5000);
+    }
+
+    // Ação: Criar Postagem no Feed
+    document.getElementById('btnPostar').addEventListener('click', () => {
+        const text = document.getElementById('postText').value.trim();
+        if(!text) return;
+
+        const autor = userSession.customName || userSession.displayName;
+        const novoPostRef = push(ref(db, 'feed_posts'));
+        set(novoPostRef, {
+            author: autor,
+            text: text,
+            color: userSession.color,
+            date: new Date().toLocaleTimeString() + " " + new Date().toLocaleDateString()
+        }).then(() => {
+            document.getElementById('postText').value = "";
+        });
+    });
+
+    // Ação: Enviar Mensagem no Chat Coletivo
+    document.getElementById('btnEnviarChat').addEventListener('click', () => {
+        const msgInput = document.getElementById('chatMessage');
+        const text = msgInput.value.trim();
+        if(!text) return;
+
+        const senderName = userSession.customName || userSession.displayName;
+        const novaMsgRef = push(ref(db, 'global_chat'));
+        set(novaMsgRef, {
+            sender: senderName,
+            text: text,
+            color: userSession.color,
+            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+        }).then(() => {
+            msgInput.value = "";
+        });
+    });
+
+    // Ação: Gravar Customização de Perfil no Firebase
+    document.getElementById('btnSalvarPerfil').addEventListener('click', () => {
+        const customName = document.getElementById('profileName').value.trim();
+        const color = document.getElementById('profileColor').value;
+
+        if(!customName) return alert("Seu apelido não pode ficar em branco!");
+
+        set(ref(db, `users/${userSession.uid}`), {
+            customName: customName,
+            color: color
+        }).then(() => {
+            userSession.customName = customName;
+            userSession.color = color;
+            alert("Perfil sincronizado na Matrix com sucesso!");
+        });
+    });
+
+    // Ação: Buscar Memórias de Entidades (Matrix HUD)
     document.getElementById('btnBuscar').addEventListener('click', async () => {
         const nome = document.getElementById('stickmanName').value.trim();
         if (!nome) return;
 
         try {
-            const resposta = await fetch(`${FIREBASE_URL}/stickmans/${nome}.json`);
-            const dados = await resposta.json();
-
-            if (dados) {
+            const resposta = await get(ref(db, `stickmans/${nome}`));
+            if (resposta.exists()) {
+                const dados = resposta.val();
                 document.getElementById('profilePanel').style.display = "block";
-                document.getElementById('stickName').innerText = nome;
-                document.getElementById('stickDate').innerText = dados.criacao || "Desconhecida";
+                document.getElementById('stickName').innerText = nome.toUpperCase();
+                document.getElementById('stickDate').innerText = dados.creation_date || dados.criacao || "Desconhecida";
                 document.getElementById('stickDeaths').innerText = dados.mortes || "0";
                 
-                if(dados.avatar_b64) {
-                    document.getElementById('stickAvatar').src = `data:image/png;base64,${dados.avatar_b64}`;
+                if(dados.image_b64 || dados.avatar_b64) {
+                    document.getElementById('stickAvatar').src = `data:image/png;base64,${dados.image_b64 || dados.avatar_b64}`;
                 } else {
                     document.getElementById('stickAvatar').src = ""; 
                 }
@@ -239,14 +518,14 @@
                     });
                     log.scrollTop = log.scrollHeight;
                 } else {
-                    log.innerHTML = "<p style='color: #666;'>Nenhuma memória registrada ainda. Mente em branco.</p>";
+                    log.innerHTML = "<p style='color: #555;'>Nenhuma memória registrada ainda. Mente em branco.</p>";
                 }
             } else {
-                alert("Entidade não encontrada em Stickland. Crie ela no seu PC primeiro!");
+                alert("Entidade não localizada nos servidores Stickland. Injete-a primeiro via Paint Studio.");
             }
         } catch (error) {
-            console.error("Erro ao buscar na Matrix:", error);
-            alert("Erro de conexão com o banco de dados.");
+            console.error("Erro na leitura da Matrix:", error);
+            alert("Erro de conexão crítica com a nuvem.");
         }
     });
 </script>
