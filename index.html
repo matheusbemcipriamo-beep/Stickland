@@ -36,7 +36,7 @@
             font-size: 24px;
         }
 
-        /* Menu de Abas (Navegação do Site Real) */
+        /* Menu de Abas */
         .nav-tabs {
             display: none; /* Só aparece logado */
             background: #111;
@@ -76,7 +76,7 @@
         }
         .tab-content.active { display: block; }
 
-        /* Elementos de Formulários Gerais */
+        /* Formulários */
         .search-box, .post-box, .chat-box {
             display: flex;
             gap: 10px;
@@ -117,7 +117,7 @@
         }
         .google-btn:hover { background: #ff5c42; }
 
-        /* Estilo da Busca de Entidades (HUD) */
+        /* HUD Matrix Expandido */
         .profile-header {
             display: flex;
             gap: 20px;
@@ -128,27 +128,65 @@
             margin-top: 15px;
         }
         .avatar-img {
-            width: 110px;
-            height: 110px;
+            width: 120px;
+            height: 120px;
             border: 2px solid #00ffff;
             background: #000;
             object-fit: contain;
         }
-        .highlight { color: #ff00ff; font-weight: bold; }
-        .memory-log {
-            margin-top: 15px;
-            background: #000;
-            border: 1px solid #333;
-            padding: 10px;
-            height: 250px;
-            overflow-y: auto;
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
         }
-        .log-entry { margin-bottom: 8px; border-bottom: 1px solid #1a1a1a; padding-bottom: 4px; font-size: 13px;}
-        .log-user { color: #00ffff; }
-        .log-ai { color: #ff3333; }
+        .stats-grid p { margin: 3px 0; font-size: 13px; }
+        .highlight { color: #00ffff; font-weight: bold; }
+        
+        /* Cores Temáticas de Facção */
+        .faction-hero { color: #00ff66; font-weight: bold; text-shadow: 0 0 5px #00ff6644; }
+        .faction-villain { color: #ff3333; font-weight: bold; text-shadow: 0 0 5px #ff333344; }
+        .faction-citizen { color: #ffcc00; font-weight: bold; }
+
+        /* Subseções de Dados */
+        .matrix-sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .data-block {
+            background: #0d0d0d;
+            border: 1px solid #333;
+            padding: 12px;
+            border-top: 2px solid #ff9900;
+        }
+        .data-block h4 {
+            margin: 0 0 10px 0;
+            color: #ff9900;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px dashed #333;
+            padding-bottom: 5px;
+        }
+        
+        .memory-log {
+            background: #000;
+            border: 1px solid #222;
+            padding: 8px;
+            height: 180px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        
+        .log-entry { margin-bottom: 8px; border-bottom: 1px solid #1a1a1a; padding-bottom: 4px; }
+        .log-user { color: #888; }
+        .log-ai { color: #00ffff; }
         .log-meta { color: #ff9900; font-weight: bold; }
 
-        /* Estilo do Feed de Posts e Redes Sociais */
+        /* Feed e Clãs */
         .post-card {
             background: #151515;
             border-left: 4px solid #ff9900;
@@ -164,7 +202,6 @@
         .post-author { font-weight: bold; }
         .post-body { color: #eee; font-size: 14px; word-break: break-all; }
 
-        /* Estilo das Comunidades / Grupos */
         .group-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -178,7 +215,6 @@
         }
         .group-card h3 { margin: 0 0 10px 0; color: #ffcc00; }
 
-        /* Sala de Chat Virtual */
         .chat-container {
             background: #000;
             border: 1px solid #444;
@@ -190,7 +226,6 @@
         .chat-msg { margin-bottom: 10px; font-size: 13px; }
         .chat-time { color: #555; font-size: 11px; }
 
-        /* Customização de Perfil */
         .edit-profile {
             background: #111;
             padding: 20px;
@@ -204,7 +239,7 @@
 <div class="main-wrapper">
     <div class="header">
         <h1>SISTEMA OPERACIONAL STICKLAND</h1>
-        <p style="margin:5px 0 0 0; color: #888; font-size: 12px;">Rede Descentralizada de Consciências & Conexões</p>
+        <p style="margin:5px 0 0 0; color: #888; font-size: 12px;">Rede Descentralizada de Consciências & Simulador de Cidade Virtual</p>
     </div>
 
     <div id="authArea" style="text-align: center;">
@@ -221,38 +256,65 @@
     <div class="nav-tabs" id="mainNav">
         <button class="tab-btn active" onclick="switchTab('hud')">Matrix HUD</button>
         <button class="tab-btn" onclick="switchTab('feed')">Feed Global</button>
-        <button class="tab-btn" onclick="switchTab('grupos')">Grupos</button>
+        <button class="tab-btn" onclick="switchTab('grupos')">Clãs da Cidade</button>
         <button class="tab-btn" onclick="switchTab('chat')">Chat Online</button>
         <button class="tab-btn" onclick="switchTab('perfil')">Meu Perfil</button>
     </div>
 
     <div id="tab-hud" class="tab-content active">
-        <h3 style="color: #ff9900; margin-top:0;">[ CONSULTAR BANCO DE CONSCIÊNCIA ]</h3>
-        <p style="font-size:12px; color:#aaa;">Qualquer Stickman vivo ou gerado por IA em sua conta pode ter suas memórias lidas remotamente aqui.</p>
+        <h3 style="color: #ff9900; margin-top:0;">[ INTERROGATÓRIO DE CONSCIÊNCIAS ]</h3>
+        <p style="font-size:12px; color:#aaa;">Rastreamento em tempo real de ações, tendências psicológicas e alinhamento urbano na Stickland.</p>
         <div class="search-box">
-            <input type="text" id="stickmanName" placeholder="Digite o codinome ou nome alternativo do Stickman...">
-            <button id="btnBuscar">Acessar Mente</button>
+            <input type="text" id="stickmanName" placeholder="Digite o nome ou ID do Stickman para descriptografar...">
+            <button id="btnBuscar">Extrair Dados Nucleares</button>
         </div>
 
         <div id="profilePanel" style="display:none;">
             <div class="profile-header">
-                <img id="stickAvatar" class="avatar-img" src="" alt="Avatar do Stickman">
-                <div class="stats">
-                    <h2 style="margin-top:0; color: #00ffff;" id="stickName">NOME DA ENTIDADE</h2>
-                    <p>Injeção de Sistema: <span class="highlight" id="stickDate">--/--/----</span></p>
-                    <p>Baixas em Combate: <span class="highlight" style="color:red;" id="stickDeaths">0</span></p>
-                    <p id="stickHistoryRow" style="display:none;">Nomes Alternativos: <span class="highlight" style="color:#ffcc00;" id="stickHistory">Nenhum</span></p>
+                <img id="stickAvatar" class="avatar-img" src="" alt="Avatar">
+                <div class="stats-grid">
+                    <div>
+                        <h2 style="margin:0 0 5px 0; color: #00ffff;" id="stickName">NOME</h2>
+                        <p>ID do Registro: <span class="highlight" id="stickUID">#0000</span></p>
+                        <p>Injeção Original: <span class="highlight" id="stickDate">--/--/----</span></p>
+                    </div>
+                    <div>
+                        <p>Status na Cidade: <span id="stickFaction" class="faction-citizen">Cidadão Comum</span></p>
+                        <p>Incursões na Stickland: <span class="highlight" style="color:#ffcc00;" id="stickVisits">0</span></p>
+                        <p>Baixas em Combate: <span class="highlight" style="color:red;" id="stickDeaths">0</span></p>
+                        <p id="stickHistoryRow" style="display:none; font-size:11px;">Ex-Codinomes: <span id="stickHistory" style="color:#aaa;">Nenhum</span></p>
+                    </div>
                 </div>
             </div>
-            <h4 style="color: #ff9900; margin-bottom: 5px; text-transform: uppercase;">[ Registro Fluido de Memórias e Dados Emocionais ]</h4>
-            <div class="memory-log" id="memoryLog"></div>
+
+            <div class="matrix-sections">
+                <div class="data-block">
+                    <h4>[ Perfil Psicológico & Memória Dinâmica ]</h4>
+                    <div class="memory-log" id="blockCoreData"></div>
+                </div>
+
+                <div class="data-block">
+                    <h4>[ Histórico de Interações por Voz (Conversas) ]</h4>
+                    <div class="memory-log" id="blockConversations"></div>
+                </div>
+
+                <div class="data-block">
+                    <h4>[ Conexões Sociais: Amigos & Inimigos ]</h4>
+                    <div class="memory-log" id="blockSocialNet"></div>
+                </div>
+
+                <div class="data-block">
+                    <h4>[ Atividades de Defesa/Ataque na Cidade ]</h4>
+                    <div class="memory-log" id="blockCombatLog"></div>
+                </div>
+            </div>
         </div>
     </div>
 
     <div id="tab-feed" class="tab-content">
         <h3 style="color: #ff9900; margin-top:0;">[ MURAL DE POSTAGENS ]</h3>
         <div style="background:#111; padding:15px; border:1px solid #333; margin-bottom:20px;">
-            <p style="margin:0 0 10px 0; font-size:12px;">O que está acontecendo em Stickland agora?</p>
+            <p style="margin:0 0 10px 0; font-size:12px;">O que está acontecendo na Stickland agora?</p>
             <div style="display:flex; gap:10px;">
                 <textarea id="postText" placeholder="Compartilhe bugs, recordes ou logs de IA..." rows="2" style="background:#050505; color:#fff; font-family:inherit; padding:8px; border:1px solid #444; flex:1; resize:none;"></textarea>
                 <button id="btnPostar" style="height:fit-content; align-self:center;">Publicar</button>
@@ -264,22 +326,22 @@
     </div>
 
     <div id="tab-grupos" class="tab-content">
-        <h3 style="color: #ff9900; margin-top:0;">[ CLÃS E COMUNIDADES ]</h3>
+        <h3 style="color: #ff9900; margin-top:0;">[ CLÃS E FACÇÕES DEFENSORAS/INVASORAS ]</h3>
         <div class="group-grid">
-            <div class="group-card">
-                <h3>Desenvolvedores Lua</h3>
-                <p style="font-size:12px; color:#aaa;">Sandbox, integrações de comandos e melhorias do Paint Studio.</p>
-                <button onclick="alert('Você entrou no clã de Desenvolvimento!')" style="padding:5px 10px; font-size:11px;">Entrar no Grupo</button>
+            <div class="group-card" style="border-top: 2px solid #00ff66;">
+                <h3 style="color:#00ff66;">Protetores da Cidade</h3>
+                <p style="font-size:12px; color:#aaa;">Heróis dedicados a impedir ataques e manter o sandbox estável.</p>
+                <button onclick="alert('Defendendo o perímetro!')" style="padding:5px 10px; font-size:11px; background:#00ff66;">Alistar-se</button>
+            </div>
+            <div class="group-card" style="border-top: 2px solid #ff3333;">
+                <h3 style="color:#ff3333;">Sindicato do Caos</h3>
+                <p style="font-size:12px; color:#aaa;">Vilões que buscam sabotar, travar e destruir distritos e janelas.</p>
+                <button onclick="alert('O caos começou...')" style="padding:5px 10px; font-size:11px; background:#ff3333; color:#fff;">Unir-se à Invasão</button>
             </div>
             <div class="group-card">
                 <h3>Fundação SCP</h3>
-                <p style="font-size:12px; color:#aaa;">Estudos de entidades perigosas infiltradas no desktop.</p>
-                <button onclick="alert('Contido. Protegido. Salvaguardado!')" style="padding:5px 10px; font-size:11px;">Entrar no Grupo</button>
-            </div>
-            <div class="group-card">
-                <h3>Caçadores de Void</h3>
-                <p style="font-size:12px; color:#aaa;">Fãs e criadores dedicados a caçar mistérios nas fendas de Stickland.</p>
-                <button onclick="alert('Membro registrado!')" style="padding:5px 10px; font-size:11px;">Entrar no Grupo</button>
+                <p style="font-size:12px; color:#aaa;">Estudos e contenção de anomalias infiltradas no desktop.</p>
+                <button onclick="alert('Contido. Protegido.')" style="padding:5px 10px; font-size:11px;">Entrar</button>
             </div>
         </div>
     </div>
@@ -339,18 +401,13 @@
         color: "#00ffff"
     };
 
-    // Sistema Global de Abas
     window.switchTab = function(tabName) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        
         document.getElementById(`tab-${tabName}`).classList.add('active');
-        if(event && event.currentTarget) {
-            event.currentTarget.classList.add('active');
-        }
+        if(event && event.currentTarget) event.currentTarget.classList.add('active');
     }
 
-    // [CORREÇÃO] Listener de Persistência de Estado de Login do Firebase
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             userSession.uid = user.uid;
@@ -372,24 +429,15 @@
             
             document.getElementById('profileName').value = userSession.customName || userSession.displayName;
             document.getElementById('profileColor').value = userSession.color;
-
             startRealtimeListeners();
         } else {
-            // Caso não esteja logado, exibe os botões normais
             document.getElementById('mainNav').style.display = "none";
             document.getElementById('authArea').style.display = "block";
-            const statusElement = document.getElementById('connectionStatus');
-            statusElement.innerText = `[!] CONEXÃO NEURAL: INATIVA - REQUISITA DECODIFICAÇÃO DE CONTA`;
-            statusElement.style.color = "#ff3333";
         }
     });
 
-    // Login Manual por Clique
     document.getElementById('btnGoogle').addEventListener('click', () => {
-        signInWithPopup(auth, provider).catch((error) => {
-            console.error("Erro no Login:", error);
-            alert("Falha de autenticação.");
-        });
+        signInWithPopup(auth, provider).catch(() => alert("Falha de autenticação."));
     });
 
     function startRealtimeListeners() {
@@ -398,9 +446,7 @@
             feedContainer.innerHTML = "";
             if(snapshot.exists()) {
                 const posts = [];
-                snapshot.forEach(childSnap => {
-                    posts.unshift({ id: childSnap.key, ...childSnap.val() });
-                });
+                snapshot.forEach(childSnap => { posts.unshift({ id: childSnap.key, ...childSnap.val() }); });
                 posts.forEach(post => {
                     feedContainer.innerHTML += `
                         <div class="post-card">
@@ -428,67 +474,47 @@
                     `;
                 });
                 chatWindow.scrollTop = chatWindow.scrollHeight;
-            } else {
-                chatWindow.innerHTML = "<p style='color:#444;'>Canal vazio. Digite algo abaixo.</p>";
             }
         });
         
         setInterval(() => {
-            set(ref(db, 'server_status'), { is_online: true, last_ping: Date.now() })
-                .catch(err => console.log("Erro no ping:", err));
+            set(ref(db, 'server_status'), { is_online: true, last_ping: Date.now() }).catch(() => {});
         }, 5000);
     }
 
+    // Ações das redes sociais normais
     document.getElementById('btnPostar').addEventListener('click', () => {
         const text = document.getElementById('postText').value.trim();
         if(!text) return;
-
-        const autor = userSession.customName || userSession.displayName;
-        const novoPostRef = push(ref(db, 'feed_posts'));
-        set(novoPostRef, {
-            author: autor,
+        push(ref(db, 'feed_posts'), {
+            author: userSession.customName || userSession.displayName,
             text: text,
             color: userSession.color,
             date: new Date().toLocaleTimeString() + " " + new Date().toLocaleDateString()
-        }).then(() => {
-            document.getElementById('postText').value = "";
-        });
+        }).then(() => { document.getElementById('postText').value = ""; });
     });
 
     document.getElementById('btnEnviarChat').addEventListener('click', () => {
         const msgInput = document.getElementById('chatMessage');
         const text = msgInput.value.trim();
         if(!text) return;
-
-        const senderName = userSession.customName || userSession.displayName;
-        const novaMsgRef = push(ref(db, 'global_chat'));
-        set(novaMsgRef, {
-            sender: senderName,
+        push(ref(db, 'global_chat'), {
+            sender: userSession.customName || userSession.displayName,
             text: text,
             color: userSession.color,
             time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-        }).then(() => {
-            msgInput.value = "";
-        });
+        }).then(() => { msgInput.value = ""; });
     });
 
     document.getElementById('btnSalvarPerfil').addEventListener('click', () => {
         const customName = document.getElementById('profileName').value.trim();
         const color = document.getElementById('profileColor').value;
-
         if(!customName) return alert("Seu apelido não pode ficar em branco!");
-
-        set(ref(db, `users/${userSession.uid}`), {
-            customName: customName,
-            color: color
-        }).then(() => {
-            userSession.customName = customName;
-            userSession.color = color;
-            alert("Perfil sincronizado na Matrix com sucesso!");
-        });
+        set(ref(db, `users/${userSession.uid}`), { customName: customName, color: color })
+            .then(() => { alert("Perfil sincronizado com sucesso!"); });
     });
 
-    // [CORREÇÃO/MELHORIA] Acessar e exibir TUDO armazenado sem apagar nada e vinculando nomes passados
+    // MATE E LOG DE DADOS ABSOLUTO DO STICKMAN
     document.getElementById('btnBuscar').addEventListener('click', async () => {
         const nomeDigitado = document.getElementById('stickmanName').value.trim();
         if (!nomeDigitado) return;
@@ -505,17 +531,12 @@
                 if (todosStickmansSnap.exists()) {
                     todosStickmansSnap.forEach(childSnap => {
                         const sData = childSnap.val();
-                        // Varre tanto "historico_nomes" quanto o padrão "nomes_passados" usado no sandbox python
-                        let nomesParaChecar = [];
-                        if (sData.historico_nomes) {
-                            nomesParaChecar = nomesParaChecar.concat(Array.isArray(sData.historico_nomes) ? sData.historico_nomes : [sData.historico_nomes]);
-                        }
-                        if (sData.nomes_passados) {
-                            nomesParaChecar = nomesParaChecar.concat(Array.isArray(sData.nomes_passados) ? sData.nomes_passados : [sData.nomes_passados]);
-                        }
+                        let nomesParaChecar = [childSnap.key.toLowerCase()];
+                        if (sData.id) nomesParaChecar.push(String(sData.id).toLowerCase());
+                        if (sData.historico_nomes) nomesParaChecar = nomesParaChecar.concat(sData.historico_nomes.map(n => n.toLowerCase()));
+                        if (sData.nomes_passados) nomesParaChecar = nomesParaChecar.concat(sData.nomes_passados.map(n => n.toLowerCase()));
 
-                        const achouVariacao = nomesParaChecar.some(n => typeof n === 'string' && n.toLowerCase() === nomeDigitado.toLowerCase());
-                        if (achouVariacao) {
+                        if (nomesParaChecar.includes(nomeDigitado.toLowerCase())) {
                             dados = sData;
                             nomeFinal = childSnap.key; 
                         }
@@ -526,72 +547,102 @@
             if (dados) {
                 document.getElementById('profilePanel').style.display = "block";
                 document.getElementById('stickName').innerText = nomeFinal.toUpperCase();
-                document.getElementById('stickDate').innerText = dados.creation_date || dados.criacao || "Desconhecida";
+                document.getElementById('stickUID').innerText = dados.id || "Desconhecido";
+                document.getElementById('stickDate').innerText = dados.creation_date || dados.criacao || "Não Registrada";
                 document.getElementById('stickDeaths').innerText = dados.mortes !== undefined ? dados.mortes : "0";
+                document.getElementById('stickVisits').innerText = dados.visitas_stickland !== undefined ? dados.visitas_stickland : "1";
                 
-                const histRow = document.getElementById('stickHistoryRow');
-                const histSpan = document.getElementById('stickHistory');
-                
+                // Determinar Facção Visualmente
+                const facElem = document.getElementById('stickFaction');
+                const fac = dados.alinhamento ? dados.alinhamento.toLowerCase() : "cidadao";
+                if(fac === "heroi") {
+                    facElem.innerText = "HERÓI DA CIDADE"; facElem.className = "faction-hero";
+                } else if(fac === "vilao") {
+                    facElem.innerText = "VILÃO ATACANTE"; facElem.className = "faction-villain";
+                } else {
+                    facElem.innerText = "CIDADÃO COMUM"; facElem.className = "faction-citizen";
+                }
+
+                // Histórico de codinomes antigos
                 let arrayNomes = [];
                 if(dados.historico_nomes) arrayNomes = arrayNomes.concat(dados.historico_nomes);
                 if(dados.nomes_passados) arrayNomes = arrayNomes.concat(dados.nomes_passados);
-                // Remove duplicatas da exibição visual
                 arrayNomes = [...new Set(arrayNomes)].filter(n => n.toLowerCase() !== nomeFinal.toLowerCase());
-
                 if (arrayNomes.length > 0) {
-                    histRow.style.display = "block";
-                    histSpan.innerText = arrayNomes.join(", ");
+                    document.getElementById('stickHistoryRow').style.display = "block";
+                    document.getElementById('stickHistory').innerText = arrayNomes.join(", ");
                 } else {
-                    histRow.style.display = "none";
+                    document.getElementById('stickHistoryRow').style.display = "none";
                 }
                 
+                // Imagem / Avatar
                 if(dados.image_b64 || dados.avatar_b64) {
                     document.getElementById('stickAvatar').src = `data:image/png;base64,${dados.image_b64 || dados.avatar_b64}`;
                 } else {
                     document.getElementById('stickAvatar').src = ""; 
                 }
 
-                const log = document.getElementById('memoryLog');
-                log.innerHTML = ""; 
+                // LIMPAR BLOCOS E DISTRIBUIR OS DADOS ABSOLUTOS
+                const bCore = document.getElementById('blockCoreData');
+                const bConversations = document.getElementById('blockConversations');
+                const bSocial = document.getElementById('blockSocialNet');
+                const bCombat = document.getElementById('blockCombatLog');
+                
+                bCore.innerHTML = ""; bConversations.innerHTML = ""; bSocial.innerHTML = ""; bCombat.innerHTML = "";
 
-                // Exibir propriedades dinâmicas adicionais na mente (Inimigos, Amigos, Traumas, etc.)
-                let metadadosExtra = "";
-                const camposParaVarrer = ["inimigos", "amigos", "traumas", "usuarios_odiados", "pensamentos_importantes", "historico_traumas"];
-                
-                camposParaVarrer.forEach(campo => {
-                    if (dados[campo]) {
-                        let conteudo = Array.isArray(dados[campo]) ? dados[campo].join(", ") : JSON.stringify(dados[campo]);
-                        metadadosExtra += `<div class="log-entry"><span class="log-meta">[CONHECIMENTO - ${campo.toUpperCase()}]:</span> ${conteudo}</div>`;
-                    }
-                });
-                
-                if (metadadosExtra !== "") {
-                    log.innerHTML += metadadosExtra;
+                // 1. Preencher Core / Pensamentos Importantes
+                if(dados.pensamentos_importantes) {
+                    bCore.innerHTML += `<div class="log-entry"><span class="log-meta">[PENSAMENTO CENTRAL]:</span> ${dados.pensamentos_importantes}</div>`;
                 }
+                if(dados.traumas) {
+                    let t = Array.isArray(dados.traumas) ? dados.traumas.join(", ") : dados.traumas;
+                    bCore.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff3333;">[TRAUMAS ATIVOS]:</span> ${t}</div>`;
+                }
+                if(bCore.innerHTML === "") bCore.innerHTML = "<p style='color:#555;'>Mente sem diretrizes anômalas estritas.</p>";
 
-                // Conversas Normais
+                // 2. Preencher Conversas Completas
                 if(dados.memory && dados.memory.length > 0) {
-                    dados.memory.forEach(conversa => {
-                        log.innerHTML += `
+                    dados.memory.forEach(c => {
+                        bConversations.innerHTML += `
                             <div class="log-entry">
-                                <span class="log-user">User:</span> ${conversa.user}<br>
-                                <span class="log-ai">${nomeFinal}:</span> ${conversa.ai}
-                            </div>
-                        `;
+                                <span class="log-user">Usuário:</span> ${c.user}<br>
+                                <span class="log-ai">${nomeFinal}:</span> ${c.ai}
+                            </div>`;
                     });
-                }
-                
-                if (log.innerHTML === "") {
-                    log.innerHTML = "<p style='color: #555;'>Nenhuma memória ou registro emocional detectado. Mente vazia.</p>";
                 } else {
-                    log.scrollTop = log.scrollHeight;
+                    bConversations.innerHTML = "<p style='color:#555;'>Nenhum comando de voz gravado na memória de curto prazo.</p>";
                 }
+
+                // 3. Preencher Rede Social (Amigos e Inimigos)
+                let amg = dados.amigos ? (Array.isArray(dados.amigos) ? dados.amigos.join(", ") : dados.amigos) : "Nenhum amigo registrado";
+                let inim = dados.inimigos ? (Array.isArray(dados.inimigos) ? dados.inimigos.join(", ") : dados.inimigos) : "Nenhum rival declarado";
+                bSocial.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#00ff66;">[AMIGOS]:</span> ${amg}</div>`;
+                bSocial.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff3333;">[INIMIGOS]:</span> ${inim}</div>`;
+                if(dados.usuarios_odiados) {
+                    bSocial.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff00ff;">[HUMANOS ODIADOS]:</span> ${dados.usuarios_odiados}</div>`;
+                }
+
+                // 4. Preencher Atividades na Cidade / Combate e Ataques
+                if(dados.historico_combates && dados.historico_combates.length > 0) {
+                    dados.historico_combates.forEach(combate => {
+                        bCombat.innerHTML += `<div class="log-entry" style="color:#ffcc00;">[BATALHA]: ${combate}</div>`;
+                    });
+                } else {
+                    // Texto padrão contextual baseado no alinhamento caso não existam logs explícitos ainda
+                    if(fac === "vilao") {
+                        bCombat.innerHTML = "<div class="log-entry" style='color:#ff3333;'>[ALERTA]: Registros indicam vandalismo nas fronteiras da Stickland!</div>";
+                    } else if(fac === "heroi") {
+                        bCombat.innerHTML = "<div class="log-entry" style='color:#00ff66;'>[PATRULHA]: Entidade detectada protegendo civis e interceptando ameaças.</div>";
+                    } else {
+                        bCombat.innerHTML = "<p style='color:#555;'>Nenhum combate violento recente registrado na central.</p>";
+                    }
+                }
+
             } else {
-                alert("Entidade não localizada nos servidores Stickland. Injete-a primeiro via Paint Studio.");
+                alert("Entidade não localizada nos servidores Stickland. Injete-a primeiro pelo Paint Studio!");
             }
         } catch (error) {
-            console.error("Erro na leitura da Matrix:", error);
-            alert("Erro de conexão crítica com a nuvem.");
+            alert("Erro crítico ao descriptografar dados da Matrix.");
         }
     });
 </script>
