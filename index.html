@@ -251,7 +251,6 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            /* Usando o seu fundo antigo */
             background: url('image_0fd018.jpg') no-repeat center center;
             background-size: cover;
             z-index: 9999;
@@ -272,9 +271,9 @@
             position: absolute;
             width: 30px;
             height: 30px;
-            pointer-events: none; /* Para não atrapalhar os cliques do usuário real */
+            pointer-events: none;
             z-index: 10000;
-            transition: left 0.1s linear, top 0.1s linear; /* Movimento suave */
+            transition: left 0.1s linear, top 0.1s linear;
         }
     </style>
 </head>
@@ -448,3 +447,464 @@
         <div id="roomStickmans"></div>
     </div>
 </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, get, child, update, onValue, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    // Configuração do Firebase apontando para o seu banco do Stickland
+    const firebaseConfig = {
+        databaseURL: "https://stickland-3ccaa-default-rtdb.firebaseio.com"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    let currentUser = null;
+    let currentRoomRef = null;
+    let fallbackRoomInterval = null;
+
+    // --- SISTEMA DE ABAS ---
+    const tabs = document.querySelectorAll('.tab-btn');
+    const contents = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+        });
+    });
+
+    // --- AUTENTICAÇÃO E LOGIN ---
+    document.getElementById('btnGoogle').addEventListener('click', () => {
+        signInWithPopup(auth, provider).catch(err => console.error("Erro login:", err));
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('authArea').style.display = 'none';
+            document.getElementById('mainNav').style.display = 'flex';
+            
+            const statusBox = document.getElementById('connectionStatus');
+            statusBox.style.color = "#00ff66";
+            statusBox.innerText = `[+] TERMINAL ATIVO: OPERADOR CONECTADO COMO ${user.displayName.toUpperCase()}`;
+
+            // Registrar ou verificar perfil na Matrix
+            const userRef = ref(db, `users/${user.uid}`);
+            const snapshot = await get(userRef);
+            if (!snapshot.exists()) {
+                await set(userRef, {
+                    name: user.displayName,
+                    color: "#00ffff",
+                    uid: user.uid,
+                    email: user.email
+                });
+            }
+            
+            // Ativar rotinas e listeners em tempo real
+            initChat();
+            initFeed();
+            initMultiplayerSystem();
+        }
+    });
+
+    // --- EXTRAIR DADOS NUCLEARES (BUSCA DE STICKMAN) ---
+    document.getElementById('btnBuscar').addEventListener('click', async () => {
+        const queryName = document.getElementById('stickmanName').value.trim();
+        if (!queryName) return alert("Insira um codinome válido para descriptografar.");
+
+        const panel = document.getElementById('profilePanel');
+        panel.style.display = "none";
+
+        try {
+            const dbRef = ref(db);
+            const snapshot = await get(child(dbRef, 'entities'));
+            if (!snapshot.exists()) return alert("Nenhum registro de consciência detectado na Matrix.");
+
+            let foundKey = null;
+            let foundData = null;
+
+            // Busca exata ou por aproximação de nome
+            snapshot.forEach(childSnap => {
+                const data = childSnap.val();
+                if (data.name && data.name.toLowerCase().includes(queryName.toLowerCase())) {
+                    foundKey = childSnap.key;
+                    foundData = data;
+                }
+            });
+
+            if (!foundData) return alert("Aviso: Consciência limpa ou não registrada nos distritos ativos.");
+
+            // Descriptografar e preencher a HUD Matrix
+            document.getElementById('stickName').innerText = foundData.name.toUpperCase();
+            document.getElementById('stickUID').innerText = `#${foundKey.substring(0,6).toUpperCase()}`;
+            document.getElementById('stickDate').innerText = foundData.creation_date || "Desconhecida";
+            document.getElementById('stickVisits').innerText = foundData.visits || "1";
+            document.getElementById('stickDeaths').innerText = foundData.deaths || "0";
+            
+            const avatarImg = document.getElementById('stickAvatar');
+            avatarImg.src = foundData.image_b64 ? `data:image/png;base64,${foundData.image_b64}` : 'image_104ff9.png';
+
+            // Alinhamento de Facção visual
+            const factionLabel = document.getElementById('stickFaction');
+            if(foundData.faction === "hero") {
+                factionLabel.innerText = "Protetor do Distrito"; factionLabel.className = "faction-hero";
+            } else if(foundData.faction === "villain") {
+                factionLabel.innerText = "Sindicato do Caos"; factionLabel.className = "faction-villain";
+            } else {
+                factionLabel.innerText = "Cidadão Comum"; factionLabel.className = "faction-citizen";
+            }
+
+            // Memória Psicológica
+            const coreBox = document.getElementById('blockCoreData');
+            coreBox.innerHTML = `<div class="log-entry"><span class="log-meta">[MEMÓRIA]:</span> ${foundData.memory || "Nenhuma memória base injetada."}</div>`;
+            if(foundData.skills) {
+                coreBox.innerHTML += `<div class="log-entry"><span class="log-meta">[ATRIBUTOS]:</span> Velocidade: ${foundData.skills.speed ? "Alta" : "Normal"} | Força: ${foundData.skills.strength || 1}</div>`;
+            }
+
+            // Histórico de Conversas (Voz Inteligente)
+            const convBox = document.getElementById('blockConversations');
+            convBox.innerHTML = "";
+            if (foundData.conversations) {
+                Object.values(foundData.conversations).forEach(c => {
+                    convBox.innerHTML += `
+                        <div class="log-entry">
+                            <span class="log-user">[User]:</span> ${c.user}<br>
+                            <span class="log-ai">[${foundData.name}]:</span> ${c.ai}
+                        </div>`;
+                });
+            } else {
+                convBox.innerHTML = `<p style="color:#555;font-size:11px;">Sem logs de áudio recentes.</p>`;
+            }
+
+            // Redes Sociais e Combate (Ganchos para expansões futuras)
+            document.getElementById('blockSocialNet').innerHTML = `<p style="color:#555;font-size:11px;">Aliados padrão da malha urbana detectados.</p>`;
+            document.getElementById('blockCombatLog').innerHTML = `<p style="color:#555;font-size:11px;">Última ação: Monitorando sandbox_gateway.json</p>`;
+
+            panel.style.display = "block";
+
+        } catch (err) {
+            console.error(err);
+            alert("Falha fatal na descriptografia de pacotes.");
+        }
+    });
+
+    // --- CANAL COLETIVO (CHAT) ---
+    function initChat() {
+        const chatWin = document.getElementById('chatWindow');
+        onValue(ref(db, 'chat'), (snapshot) => {
+            chatWin.innerHTML = "";
+            if(!snapshot.exists()) return;
+            snapshot.forEach(childSnap => {
+                const m = childSnap.val();
+                chatWin.innerHTML += `<div class="chat-msg"><span style="color:${m.color || '#fff'}">${m.author}</span>: ${m.text}</div>`;
+            });
+            chatWin.scrollTop = chatWin.scrollHeight;
+        });
+    }
+
+    document.getElementById('btnEnviarChat').addEventListener('click', () => {
+        const txt = document.getElementById('chatMessage').value.trim();
+        if(!txt || !currentUser) return;
+        get(ref(db, `users/${currentUser.uid}`)).then(snap => {
+            const uData = snap.val() || {};
+            push(ref(db, 'chat'), {
+                author: uData.name || currentUser.displayName,
+                color: uData.color || '#00ffff',
+                text: txt,
+                timestamp: Date.now()
+            });
+            document.getElementById('chatMessage').value = "";
+        });
+    });
+
+    // --- MURAL DE POSTAGENS (FEED) ---
+    function initFeed() {
+        const feedContainer = document.getElementById('feedContainer');
+        onValue(ref(db, 'feed'), (snapshot) => {
+            feedContainer.innerHTML = "";
+            if(!snapshot.exists()) {
+                feedContainer.innerHTML = `<p style="color:#666;">Nenhuma transmissão feita no mural.</p>`;
+                return;
+            }
+            let list = [];
+            snapshot.forEach(cs => { list.unshift(cs.val()); });
+            list.forEach(p => {
+                feedContainer.innerHTML += `
+                    <div class="post-card">
+                        <div class="post-meta">Injetado por <span class="post-author" style="color:${p.color}">${p.author}</span> em ${p.date}</div>
+                        <div class="post-body">${p.text}</div>
+                    </div>`;
+            });
+        });
+    }
+
+    document.getElementById('btnPostar').addEventListener('click', () => {
+        const txt = document.getElementById('postText').value.trim();
+        if(!txt || !currentUser) return;
+        get(ref(db, `users/${currentUser.uid}`)).then(snap => {
+            const uData = snap.val() || {};
+            push(ref(db, 'feed'), {
+                author: uData.name || currentUser.displayName,
+                color: uData.color || '#ff9900',
+                text: txt,
+                date: new Date().toLocaleString('pt-BR')
+            });
+            document.getElementById('postText').value = "";
+        });
+    });
+
+    // --- CONFIGURAÇÕES DE PERFIL ---
+    document.getElementById('btnSalvarPerfil').addEventListener('click', () => {
+        const newName = document.getElementById('profileName').value.trim();
+        const newColor = document.getElementById('profileColor').value;
+        if(!newName || !currentUser) return alert("Defina um apelido válido.");
+        
+        update(ref(db, `users/${currentUser.uid}`), {
+            name: newName,
+            color: newColor
+        }).then(() => alert("Identidade Virtual atualizada na Matrix!"));
+    });
+
+
+    // ========================================================
+    // --- LÓGICA DO SISTEMA MULTIPLAYER (CO-OP & AMIGOS) ---
+    // ========================================================
+    function initMultiplayerSystem() {
+        carregarListaAmigos();
+        carregarSolicitacoesPendentes();
+        ouvirConvitesMultiplayer();
+    }
+
+    // Buscar Operadores para adicionar
+    document.getElementById('btnSearchUser').addEventListener('click', async () => {
+        const searchStr = document.getElementById('searchUserStr').value.trim().toLowerCase();
+        const resultsDiv = document.getElementById('userSearchResults');
+        resultsDiv.innerHTML = "";
+        if(!searchStr) return;
+
+        const usersSnap = await get(ref(db, 'users'));
+        if(!usersSnap.exists()) return;
+
+        usersSnap.forEach(childSnap => {
+            const u = childSnap.val();
+            if(u.uid !== currentUser.uid && u.name.toLowerCase().includes(searchStr)) {
+                const card = document.createElement('div');
+                card.className = "friend-card";
+                card.innerHTML = `
+                    <span style="color:${u.color}">${u.name}</span>
+                    <button class="add-btn" data-uid="${u.uid}">Enviar Solicitação</button>
+                `;
+                resultsDiv.appendChild(card);
+                
+                card.querySelector('.add-btn').addEventListener('click', () => {
+                    set(ref(db, `friend_requests/${u.uid}/${currentUser.uid}`), {
+                        uid: currentUser.uid,
+                        name: currentUser.displayName
+                    });
+                    alert("Solicitação enviada!");
+                });
+            }
+        });
+    });
+
+    // Listar Amigos Adicionados
+    function carregarListaAmigos() {
+        onValue(ref(db, `friends/${currentUser.uid}`), (snapshot) => {
+            const container = document.getElementById('friendsListContainer');
+            container.innerHTML = "";
+            if(!snapshot.exists()) {
+                container.innerHTML = `<p style="color:#666; font-size:12px;">Nenhum amigo adicionado ainda.</p>`;
+                return;
+            }
+            snapshot.forEach(childSnap => {
+                const f = childSnap.val();
+                const card = document.createElement('div');
+                card.className = "friend-card";
+                card.innerHTML = `
+                    <span>${f.name}</span>
+                    <div style="display:flex; gap:5px;">
+                        <button class="invite-btn" style="background:#00ff66;">Convidar pro PC</button>
+                        <button class="visit-btn" style="background:#00ffff;">Visitar PC</button>
+                    </div>
+                `;
+                container.appendChild(card);
+
+                // Convidar Amigo
+                card.querySelector('.invite-btn').addEventListener('click', () => {
+                    set(ref(db, `multiplayer_invites/${f.uid}`), {
+                        hostUid: currentUser.uid,
+                        hostName: currentUser.displayName,
+                        status: "pending"
+                    });
+                    entrarNaSalaFakePC(currentUser.uid, `Seu Próprio Desktop (Host)`);
+                });
+
+                // Visitar Amigo diretamente
+                card.querySelector('.visit-btn').addEventListener('click', () => {
+                    entrarNaSalaFakePC(f.uid, `Desktop de ${f.name}`);
+                });
+            });
+        });
+    }
+
+    // Listar Pedidos de Amizade
+    function carregarSolicitacoesPendentes() {
+        onValue(ref(db, `friend_requests/${currentUser.uid}`), (snapshot) => {
+            const container = document.getElementById('friendRequestsContainer');
+            container.innerHTML = "";
+            if(!snapshot.exists()) {
+                container.innerHTML = `<p style="color:#666; font-size:12px;">Nenhuma solicitação.</p>`;
+                return;
+            }
+            snapshot.forEach(childSnap => {
+                const req = childSnap.val();
+                const card = document.createElement('div');
+                card.className = "friend-card";
+                card.innerHTML = `
+                    <span>${req.name}</span>
+                    <button class="accept-btn">Aceitar</button>
+                `;
+                container.appendChild(card);
+
+                card.querySelector('.accept-btn').addEventListener('click', async () => {
+                    await set(ref(db, `friends/${currentUser.uid}/${req.uid}`), { uid: req.uid, name: req.name });
+                    await set(ref(db, `friends/${req.uid}/${currentUser.uid}`), { uid: currentUser.uid, name: currentUser.displayName });
+                    await set(ref(db, `friend_requests/${currentUser.uid}/${req.uid}`), null);
+                    alert("Amizade firmada!");
+                });
+            });
+        });
+    }
+
+    // Monitorar Convites Recebidos
+    function ouvirConvitesMultiplayer() {
+        onValue(ref(db, `multiplayer_invites/${currentUser.uid}`), (snapshot) => {
+            if(!snapshot.exists()) return;
+            const inv = snapshot.val();
+            if(inv.status === "pending") {
+                if(confirm(`${inv.hostName} está te convidando para acessar a Área de Trabalho remota dele. Aceitar?`)) {
+                    update(ref(db, `multiplayer_invites/${currentUser.uid}`), { status: "accepted" });
+                    entrarNaSalaFakePC(inv.hostUid, `Desktop de ${inv.hostName}`);
+                } else {
+                    set(ref(db, `multiplayer_invites/${currentUser.uid}`), null);
+                }
+            }
+        });
+    }
+
+    // --- ENTRAR E RENDERIZAR O PC FAKE RETRO ---
+    function entrarNaSalaFakePC(roomUid, titleText) {
+        document.getElementById('roomTitle').innerText = `[SALA] ${titleText}`;
+        document.getElementById('fake-pc-room').style.display = "block";
+        
+        currentRoomRef = ref(db, `rooms/${roomUid}`);
+
+        // Sincronizar ratos e Stickmen
+        ouvirElementosDaSala();
+
+        // Rastrear movimento do mouse real e enviar pro Firebase
+        document.getElementById('fake-pc-room').addEventListener('mousemove', enviarPosicaoMouse);
+    }
+
+    function enviarPosicaoMouse(e) {
+        if(!currentRoomRef || !currentUser) return;
+        const canvasRect = document.getElementById('multiplayer-canvas').getBoundingClientRect();
+        
+        // Converte a posição do mouse em porcentagem estável (0% a 100%)
+        const pctX = ((e.clientX - canvasRect.left) / canvasRect.width) * 100;
+        const pctY = ((e.clientY - canvasRect.top) / canvasRect.height) * 100;
+
+        update(child(currentRoomRef, `cursors/${currentUser.uid}`), {
+            x: pctX,
+            y: pctY,
+            name: currentUser.displayName
+        });
+    }
+
+    function ouvirElementosDaSala() {
+        if(!currentRoomRef) return;
+
+        // Renderizar cursores e Stickmen ativos
+        onValue(currentRoomRef, (snapshot) => {
+            const canvas = document.getElementById('multiplayer-canvas');
+            
+            // Limpa cursores antigos mantendo a div de Stickmen
+            document.querySelectorAll('.multiplayer-cursor').forEach(c => c.remove());
+            const stickmenContainer = document.getElementById('roomStickmans');
+            stickmenContainer.innerHTML = "";
+
+            if(!snapshot.exists()) return;
+            const roomData = snapshot.val();
+
+            // 1. Renderizar cursores dos outros jogadores na sala
+            if(roomData.cursors) {
+                Object.keys(roomData.cursors).forEach(uid => {
+                    if(uid === currentUser.uid) return; // Não desenha seu próprio cursor
+                    const mouse = roomData.cursors[uid];
+                    
+                    const cursorImg = document.createElement('img');
+                    cursorImg.className = "multiplayer-cursor";
+                    cursorImg.src = "image_0fd01b.png"; // Cursor customizado
+                    cursorImg.style.left = `${mouse.x}%`;
+                    cursorImg.style.top = `${mouse.y}%`;
+
+                    canvas.appendChild(cursorImg);
+                });
+            }
+        });
+
+        // Loop de redundância local: Atualiza os Stickmen ativos direto do Sandbox de Área de Trabalho
+        fallbackRoomInterval = setInterval(async () => {
+            const entitiesSnap = await get(ref(db, 'entities'));
+            const stickmenContainer = document.getElementById('roomStickmans');
+            stickmenContainer.innerHTML = "";
+            
+            if(entitiesSnap.exists()) {
+                entitiesSnap.forEach(snap => {
+                    const stick = snap.val();
+                    const stickEl = document.createElement('div');
+                    stickEl.style.position = "absolute";
+                    stickEl.style.left = `${Math.random() * 80 + 5}%`;
+                    stickEl.style.top = `${Math.random() * 70 + 10}%`;
+                    stickEl.style.textAlign = "center";
+                    
+                    const img = document.createElement('img');
+                    img.src = stick.image_b64 ? `data:image/png;base64,${stick.image_b64}` : 'image_104ff9.png';
+                    img.style.width = "75px";
+                    img.style.height = "75px";
+                    img.style.objectFit = "contain";
+
+                    const nameLbl = document.createElement('p');
+                    nameLbl.innerText = stick.name;
+                    nameLbl.style.margin = "2px 0 0 0";
+                    nameLbl.style.fontSize = "11px";
+                    nameLbl.style.color = "#00ff66";
+                    nameLbl.style.background = "rgba(0,0,0,0.7)";
+
+                    stickEl.appendChild(img);
+                    stickEl.appendChild(nameLbl);
+                    stickmenContainer.appendChild(stickEl);
+                });
+            }
+        }, 3000);
+    }
+
+    // Sair da Sala e desligar rastreamento
+    document.getElementById('btnSairSala').addEventListener('click', () => {
+        if(currentRoomRef && currentUser) {
+            set(child(currentRoomRef, `cursors/${currentUser.uid}`), null);
+        }
+        clearInterval(fallbackRoomInterval);
+        document.getElementById('fake-pc-room').removeEventListener('mousemove', enviarPosicaoMouse);
+        document.getElementById('fake-pc-room').style.display = "none";
+        currentRoomRef = null;
+    });
+</script>
+</body>
+</html>
