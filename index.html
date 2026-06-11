@@ -254,11 +254,11 @@
     </div>
 
     <div class="nav-tabs" id="mainNav">
-        <button class="tab-btn active" onclick="switchTab('hud')">Matrix HUD</button>
-        <button class="tab-btn" onclick="switchTab('feed')">Feed Global</button>
-        <button class="tab-btn" onclick="switchTab('grupos')">Clãs da Cidade</button>
-        <button class="tab-btn" onclick="switchTab('chat')">Chat Online</button>
-        <button class="tab-btn" onclick="switchTab('perfil')">Meu Perfil</button>
+        <button class="tab-btn active" data-tab="hud">Matrix HUD</button>
+        <button class="tab-btn" data-tab="feed">Feed Global</button>
+        <button class="tab-btn" data-tab="grupos">Clãs da Cidade</button>
+        <button class="tab-btn" data-tab="chat">Chat Online</button>
+        <button class="tab-btn" data-tab="perfil">Meu Perfil</button>
     </div>
 
     <div id="tab-hud" class="tab-content active">
@@ -338,7 +338,7 @@
                 <p style="font-size:12px; color:#aaa;">Vilões que buscam sabotar, travar e destruir distritos e janelas.</p>
                 <button onclick="alert('O caos começou...')" style="padding:5px 10px; font-size:11px; background:#ff3333; color:#fff;">Unir-se à Invasão</button>
             </div>
-            <div class="group-card">
+            <div class="group-card" style="border-top: 2px solid #ff9900;">
                 <h3>Fundação SCP</h3>
                 <p style="font-size:12px; color:#aaa;">Estudos e contenção de anomalias infiltradas no desktop.</p>
                 <button onclick="alert('Contido. Protegido.')" style="padding:5px 10px; font-size:11px;">Entrar</button>
@@ -379,7 +379,7 @@
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
     import { getDatabase, ref, set, push, onValue, get, child } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
-    // Suas credenciais do Firebase restauradas perfeitamente:
+    // Credenciais do Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyA2hBfWW0bTd-N9ky95AJEweP6SyNMogyY",
         authDomain: "stickland-3ccaa.firebaseapp.com",
@@ -402,12 +402,23 @@
         color: "#00ffff"
     };
 
-    window.switchTab = function(tabName) {
+    // CORREÇÃO CRÍTICA: Mecanismo de abas compatível com módulos JavaScript
+    function switchTab(tabName, targetButton) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        document.getElementById(`tab-${tabName}`).classList.add('active');
-        if(window.event && window.event.currentTarget) window.event.currentTarget.classList.add('active');
+        
+        const targetContent = document.getElementById(`tab-${tabName}`);
+        if(targetContent) targetContent.classList.add('active');
+        if(targetButton) targetButton.classList.add('active');
     }
+
+    // Atribui o clique de mudar abas via código, removendo a necessidade do 'onclick' antigo
+    document.querySelectorAll('.tab-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const tabName = e.currentTarget.getAttribute('data-tab');
+            switchTab(tabName, e.currentTarget);
+        });
+    });
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
