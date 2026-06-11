@@ -273,6 +273,23 @@
             z-index: 10000;
             white-space: nowrap;
         }
+
+        .room-card {
+            background: #0d0d0d;
+            border: 1px solid #333;
+            border-left: 3px solid #00ff66;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .room-card .room-info { flex: 1; }
+        .room-card .room-name { color: #ffcc00; font-weight: bold; font-size: 13px; }
+        .room-card .room-host { color: #888; font-size: 11px; margin-top: 2px; }
+        .room-card .room-count { color: #00ff66; font-size: 11px; }
+        .room-card button { white-space: nowrap; padding: 6px 14px; font-size: 11px; }
     </style>
 </head>
 <body>
@@ -350,29 +367,43 @@
 
     <div id="tab-multiplayer" class="tab-content">
         <h3 style="color: #ff9900; margin-top:0;">[ REDE DE OPERADORES &amp; SALAS CO-OP ]</h3>
-        
+
+        <!-- SALAS PÚBLICAS -->
         <div class="data-block" style="margin-bottom: 20px;">
-            <h4>Pesquisar Operadores (Adicionar Amigos)</h4>
-            <div class="search-box" style="margin-bottom: 0;">
-                <input type="text" id="searchUserStr" placeholder="Nome do perfil do amigo...">
-                <button id="btnSearchUser">Procurar</button>
+            <h4>🖥️ Salas Co-op Públicas</h4>
+            <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+                <input type="text" id="roomNameInput" placeholder="Nome da sua sala (ex: Batalha do Bob)..." style="flex:1; min-width:180px;">
+                <button id="btnCriarSala" style="background:#00ff66; color:#000; white-space:nowrap;">+ Criar Sala</button>
             </div>
-            <div id="userSearchResults" style="margin-top: 10px;"></div>
+            <div id="roomListContainer">
+                <p style="color:#666; font-size:12px;">Buscando salas ativas na Matrix...</p>
+            </div>
         </div>
 
-        <div class="matrix-sections" style="grid-template-columns: 1fr 1fr;">
+        <!-- AMIGOS E SOLICITAÇÕES -->
+        <div class="matrix-sections" style="grid-template-columns: 1fr 1fr; margin-bottom: 20px;">
             <div class="data-block">
-                <h4>Seus Amigos Conectados</h4>
+                <h4>👥 Seus Amigos Conectados</h4>
                 <div id="friendsListContainer">
                     <p style="color:#666; font-size:12px;">Nenhum amigo adicionado ainda.</p>
                 </div>
             </div>
             <div class="data-block">
-                <h4>Solicitações Pendentes</h4>
+                <h4>📨 Solicitações Pendentes</h4>
                 <div id="friendRequestsContainer">
                     <p style="color:#666; font-size:12px;">Nenhuma solicitação.</p>
                 </div>
             </div>
+        </div>
+
+        <!-- BUSCA DE OPERADORES -->
+        <div class="data-block">
+            <h4>🔍 Pesquisar Operadores</h4>
+            <div class="search-box" style="margin-bottom: 0;">
+                <input type="text" id="searchUserStr" placeholder="Nome do operador para adicionar...">
+                <button id="btnSearchUser">Procurar</button>
+            </div>
+            <div id="userSearchResults" style="margin-top: 10px;"></div>
         </div>
     </div>
 
@@ -773,6 +804,94 @@
         carregarListaAmigos();
         carregarSolicitacoesPendentes();
         ouvirConvitesMultiplayer();
+        initRoomSystem();
+    }
+
+    // ── SISTEMA DE SALAS PÚBLICAS ─────────────────────────────────────────────
+    function initRoomSystem() {
+        // Listar salas em tempo real
+        onValue(ref(db, 'public_rooms'), (snapshot) => {
+            const container = document.getElementById('roomListContainer');
+            container.innerHTML = "";
+
+            if (!snapshot.exists()) {
+                container.innerHTML = `<p style="color:#666; font-size:12px;">Nenhuma sala ativa. Crie a primeira!</p>`;
+                return;
+            }
+
+            snapshot.forEach(childSnap => {
+                const room   = childSnap.val();
+                const roomId = childSnap.key;
+                const count  = room.members ? Object.keys(room.members).length : 0;
+                const isHost = currentUser && room.hostUid === currentUser.uid;
+
+                const card = document.createElement('div');
+                card.className = "room-card";
+                card.innerHTML = `
+                    <div class="room-info">
+                        <div class="room-name">📡 ${room.name}</div>
+                        <div class="room-host">Host: ${room.hostName}</div>
+                        <div class="room-count">👾 ${count} operador(es) dentro</div>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn-entrar-sala" style="background:#00ffff; color:#000;">Entrar</button>
+                        ${isHost ? `<button class="btn-deletar-sala" style="background:#ff3333; color:#fff;">Fechar</button>` : ''}
+                    </div>
+                `;
+                container.appendChild(card);
+
+                card.querySelector('.btn-entrar-sala').addEventListener('click', () => {
+                    entrarNaSalaPublica(roomId, room.name);
+                });
+
+                if (isHost) {
+                    card.querySelector('.btn-deletar-sala').addEventListener('click', async () => {
+                        await remove(ref(db, `public_rooms/${roomId}`));
+                    });
+                }
+            });
+        });
+
+        // Botão Criar Sala
+        document.getElementById('btnCriarSala').addEventListener('click', async () => {
+            if (!currentUser) return alert("Você precisa estar logado.");
+            const nome = document.getElementById('roomNameInput').value.trim();
+            if (!nome) return alert("Dê um nome para a sala!");
+
+            const snap    = await get(ref(db, `users/${currentUser.uid}`));
+            const meuNome = snap.exists() ? snap.val().name : currentUser.displayName;
+
+            const newRoomRef = push(ref(db, 'public_rooms'));
+            await set(newRoomRef, {
+                name:     nome,
+                hostUid:  currentUser.uid,
+                hostName: meuNome,
+                created:  Date.now(),
+                members:  {}
+            });
+
+            document.getElementById('roomNameInput').value = "";
+            entrarNaSalaPublica(newRoomRef.key, nome);
+        });
+    }
+
+    async function entrarNaSalaPublica(roomId, roomName) {
+        if (!currentUser) return;
+
+        const snap    = await get(ref(db, `users/${currentUser.uid}`));
+        const meuNome = snap.exists() ? snap.val().name : currentUser.displayName;
+
+        // Registra o membro na sala
+        await set(ref(db, `public_rooms/${roomId}/members/${currentUser.uid}`), {
+            name:     meuNome,
+            joinedAt: Date.now()
+        });
+
+        // Remove membro ao desconectar (onDisconnect)
+        const memberRef = ref(db, `public_rooms/${roomId}/members/${currentUser.uid}`);
+        // Entra na sala visual
+        currentRoomRef = ref(db, `public_rooms/${roomId}`);
+        entrarNaSalaFakePC(roomId, roomName, true);
     }
 
     // Buscar Operadores para adicionar
@@ -906,14 +1025,17 @@
     }
 
     // ── PC FAKE RETRO ─────────────────────────────────────────────────────────
-    function entrarNaSalaFakePC(roomUid, titleText) {
+    function entrarNaSalaFakePC(roomIdOrUid, titleText, isPublicRoom = false) {
         document.getElementById('roomTitle').innerText           = `[SALA] ${titleText.toUpperCase()}`;
         document.getElementById('fake-pc-room').style.display   = "block";
 
-        currentRoomRef = ref(db, `rooms/${roomUid}`);
+        if (!isPublicRoom) {
+            currentRoomRef = ref(db, `rooms/${roomIdOrUid}`);
+        }
+        // se isPublicRoom, currentRoomRef já foi setado em entrarNaSalaPublica
+
         ouvirElementosDaSala();
 
-        // Remove listener anterior para evitar duplicação
         document.getElementById('fake-pc-room').removeEventListener('mousemove', enviarPosicaoMouse);
         document.getElementById('fake-pc-room').addEventListener('mousemove', enviarPosicaoMouse);
     }
@@ -984,9 +1106,12 @@
         });
     }
 
-    document.getElementById('btnSairSala').addEventListener('click', () => {
+    document.getElementById('btnSairSala').addEventListener('click', async () => {
         if (currentRoomRef && currentUser) {
-            remove(child(currentRoomRef, `cursors/${currentUser.uid}`));
+            // Tenta remover cursor (salas privadas)
+            try { await remove(child(currentRoomRef, `cursors/${currentUser.uid}`)); } catch(_) {}
+            // Tenta remover membro (salas públicas)
+            try { await remove(child(currentRoomRef, `members/${currentUser.uid}`)); } catch(_) {}
         }
         document.getElementById('fake-pc-room').removeEventListener('mousemove', enviarPosicaoMouse);
         document.getElementById('fake-pc-room').style.display = "none";
