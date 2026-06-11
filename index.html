@@ -452,12 +452,12 @@
         <div id="roomStickmans"></div>
     </div>
 </div>
-
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, get, child, update, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
+    // Configuração do Firebase apontando para o seu banco do Stickland
     const firebaseConfig = {
         databaseURL: "https://stickland-3ccaa-default-rtdb.firebaseio.com"
     };
@@ -469,7 +469,7 @@
 
     let currentUser = null;
     let currentRoomRef = null;
-    let userMouseRef = null;
+    let fallbackRoomInterval = null;
 
     // --- SISTEMA DE ABAS ---
     const tabs = document.querySelectorAll('.tab-btn');
@@ -498,6 +498,7 @@
             statusBox.style.color = "#00ff66";
             statusBox.innerText = `[+] TERMINAL ATIVO: OPERADOR CONECTADO COMO ${user.displayName.toUpperCase()}`;
 
+            // Registrar ou verificar perfil na Matrix
             const userRef = ref(db, `users/${user.uid}`);
             const snapshot = await get(userRef);
             if (!snapshot.exists()) {
@@ -509,9 +510,17 @@
                 });
             }
             
+            // Inicia os sistemas principais
             initChat();
             initFeed();
             initMultiplayerSystem();
+        } else {
+            // Deslogado
+            document.getElementById('authArea').style.display = 'block';
+            document.getElementById('mainNav').style.display = 'none';
+            const statusBox = document.getElementById('connectionStatus');
+            statusBox.style.color = "#ff3333";
+            statusBox.innerText = `[!] CONEXÃO NEURAL: INATIVA - REQUISITA DECODIFICAÇÃO DE CONTA`;
         }
     });
 
@@ -525,68 +534,123 @@
 
         try {
             const dbRef = ref(db);
-            const snapshot = await get(child(dbRef, 'entities'));
+            const snapshot = await get(child(dbRef, 'stickmans'));
             if (!snapshot.exists()) return alert("Nenhum registro de consciência detectado na Matrix.");
 
             let foundKey = null;
             let foundData = null;
 
+            // Busca exata ou por aproximação de nome
             snapshot.forEach(childSnap => {
                 const data = childSnap.val();
-                if (data.name && data.name.toLowerCase().includes(queryName.toLowerCase())) {
-                    foundKey = childSnap.key;
+                let nomesParaChecar = [childSnap.key.toLowerCase()];
+                if (data.id) nomesParaChecar.push(String(data.id).toLowerCase());
+                if (data.historico_nomes) nomesParaChecar = nomesParaChecar.concat(data.historico_nomes.map(n => n.toLowerCase()));
+                if (data.nomes_passados) nomesParaChecar = nomesParaChecar.concat(data.nomes_passados.map(n => n.toLowerCase()));
+
+                if (nomesParaChecar.includes(queryName.toLowerCase())) {
                     foundData = data;
+                    foundKey = childSnap.key; 
                 }
             });
 
             if (!foundData) return alert("Aviso: Consciência limpa ou não registrada nos distritos ativos.");
 
-            document.getElementById('stickName').innerText = foundData.name.toUpperCase();
+            // Descriptografar e preencher a HUD Matrix
+            document.getElementById('stickName').innerText = foundKey.toUpperCase();
             document.getElementById('stickUID').innerText = `#${foundKey.substring(0,6).toUpperCase()}`;
-            document.getElementById('stickDate').innerText = foundData.creation_date || "Desconhecida";
-            document.getElementById('stickVisits').innerText = foundData.visits || "1";
-            document.getElementById('stickDeaths').innerText = foundData.deaths || "0";
+            document.getElementById('stickDate').innerText = foundData.creation_date || foundData.criacao || "Desconhecida";
+            document.getElementById('stickVisits').innerText = foundData.visits || foundData.visitas_stickland || "1";
+            document.getElementById('stickDeaths').innerText = foundData.deaths || foundData.mortes || "0";
             
             const avatarImg = document.getElementById('stickAvatar');
-            avatarImg.src = foundData.image_b64 ? `data:image/png;base64,${foundData.image_b64}` : 'image_104ff9.png';
+            avatarImg.src = foundData.image_b64 || foundData.avatar_b64 ? `data:image/png;base64,${foundData.image_b64 || foundData.avatar_b64}` : 'image_104ff9.png';
 
+            // Alinhamento de Facção visual
             const factionLabel = document.getElementById('stickFaction');
-            if(foundData.faction === "hero") {
+            const fac = foundData.alinhamento ? foundData.alinhamento.toLowerCase() : "cidadao";
+            if(fac === "heroi" || fac === "pacífico") {
                 factionLabel.innerText = "Protetor do Distrito"; factionLabel.className = "faction-hero";
-            } else if(foundData.faction === "villain") {
+            } else if(fac === "vilao" || fac === "destrutor" || fac === "hostil") {
                 factionLabel.innerText = "Sindicato do Caos"; factionLabel.className = "faction-villain";
             } else {
                 factionLabel.innerText = "Cidadão Comum"; factionLabel.className = "faction-citizen";
             }
 
-            const coreBox = document.getElementById('blockCoreData');
-            coreBox.innerHTML = `<div class="log-entry"><span class="log-meta">[MEMÓRIA]:</span> ${foundData.memory || "Nenhuma memória base injetada."}</div>`;
-            if(foundData.skills) {
-                coreBox.innerHTML += `<div class="log-entry"><span class="log-meta">[ATRIBUTOS]:</span> Velocidade: ${foundData.skills.speed ? "Alta" : "Normal"} | Força: ${foundData.skills.strength || 1}</div>`;
+            // Ex-Nomes
+            let arrayNomes = [];
+            if(foundData.historico_nomes) arrayNomes = arrayNomes.concat(foundData.historico_nomes);
+            if(foundData.nomes_passados) arrayNomes = arrayNomes.concat(foundData.nomes_passados);
+            arrayNomes = [...new Set(arrayNomes)].filter(n => n.toLowerCase() !== foundKey.toLowerCase());
+            
+            const histRow = document.getElementById('stickHistoryRow');
+            if (arrayNomes.length > 0) {
+                histRow.style.display = "block";
+                document.getElementById('stickHistory').innerText = arrayNomes.join(", ");
+            } else {
+                histRow.style.display = "none";
             }
 
+            // Memória Psicológica
+            const coreBox = document.getElementById('blockCoreData');
+            coreBox.innerHTML = "";
+            if(foundData.pensamentos_importantes) {
+                coreBox.innerHTML += `<div class="log-entry"><span class="log-meta">[PENSAMENTO CENTRAL]:</span> ${foundData.pensamentos_importantes}</div>`;
+            }
+            if(foundData.traumas) {
+                let t = Array.isArray(foundData.traumas) ? foundData.traumas.join(", ") : JSON.stringify(foundData.traumas);
+                coreBox.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff3333;">[TRAUMAS ATIVOS]:</span> ${t}</div>`;
+            }
+            if(coreBox.innerHTML === "") coreBox.innerHTML = "<p style='color:#555;font-size:11px;'>Mente sem diretrizes anômalas estritas.</p>";
+
+            // Histórico de Conversas
             const convBox = document.getElementById('blockConversations');
             convBox.innerHTML = "";
-            if (foundData.conversations) {
-                Object.values(foundData.conversations).forEach(c => {
+            if (foundData.memory && foundData.memory.length > 0) {
+                foundData.memory.forEach(c => {
                     convBox.innerHTML += `
                         <div class="log-entry">
                             <span class="log-user">[User]:</span> ${c.user}<br>
-                            <span class="log-ai">[${foundData.name}]:</span> ${c.ai}
+                            <span class="log-ai">[${foundKey}]:</span> ${c.ai}
                         </div>`;
                 });
             } else {
                 convBox.innerHTML = `<p style="color:#555;font-size:11px;">Sem logs de áudio recentes.</p>`;
             }
 
-            document.getElementById('blockSocialNet').innerHTML = `<p style="color:#555;font-size:11px;">Aliados padrão da malha urbana detectados.</p>`;
-            document.getElementById('blockCombatLog').innerHTML = `<p style="color:#555;font-size:11px;">Última ação: Monitorando sandbox_gateway.json</p>`;
+            // Conexões Sociais
+            const socialBox = document.getElementById('blockSocialNet');
+            socialBox.innerHTML = "";
+            let amg = foundData.amigos ? (Array.isArray(foundData.amigos) ? foundData.amigos.join(", ") : foundData.amigos) : "Nenhum amigo registrado";
+            let inim = foundData.inimigos ? (Array.isArray(foundData.inimigos) ? foundData.inimigos.join(", ") : foundData.inimigos) : "Nenhum rival declarado";
+            socialBox.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#00ff66;">[AMIGOS]:</span> ${amg}</div>`;
+            socialBox.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff3333;">[INIMIGOS]:</span> ${inim}</div>`;
+            if(foundData.usuarios_odiados) {
+                socialBox.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff00ff;">[HUMANOS ODIADOS]:</span> ${foundData.usuarios_odiados}</div>`;
+            }
+
+            // Histórico de Combate
+            const combatBox = document.getElementById('blockCombatLog');
+            combatBox.innerHTML = "";
+            if(foundData.historico_combates && foundData.historico_combates.length > 0) {
+                foundData.historico_combates.forEach(combate => {
+                    combatBox.innerHTML += `<div class="log-entry" style="color:#ffcc00;">[BATALHA]: ${combate}</div>`;
+                });
+            } else {
+                if(fac === "vilao" || fac === "hostil") {
+                    combatBox.innerHTML = "<div class='log-entry' style='color:#ff3333;'>[ALERTA]: Registros indicam vandalismo nas fronteiras da Stickland!</div>";
+                } else if(fac === "heroi" || fac === "pacífico") {
+                    combatBox.innerHTML = "<div class='log-entry' style='color:#00ff66;'>[PATRULHA]: Entidade detectada protegendo civis e interceptando ameaças.</div>";
+                } else {
+                    combatBox.innerHTML = "<p style='color:#555;font-size:11px;'>Nenhum combate violento recente registrado na central.</p>";
+                }
+            }
 
             panel.style.display = "block";
 
         } catch (err) {
             console.error(err);
-            alert("Falha fatal na descriptografia de pacotes.");
+            alert("Falha fatal na descriptografia de pacotes da Matrix.");
         }
     });
 
@@ -598,7 +662,7 @@
             if(!snapshot.exists()) return;
             snapshot.forEach(childSnap => {
                 const m = childSnap.val();
-                chatWin.innerHTML += `<div class="chat-msg"><span style="color:${m.color || '#fff'}">${m.author}</span>: ${m.text}</div>`;
+                chatWin.innerHTML += `<div class="chat-msg"><span class="chat-time">[${new Date(m.timestamp).toLocaleTimeString()}]</span> <span style="color:${m.color || '#fff'}">${m.author}</span>: ${m.text}</div>`;
             });
             chatWin.scrollTop = chatWin.scrollHeight;
         });
@@ -667,6 +731,7 @@
         }).then(() => alert("Identidade Virtual atualizada na Matrix!"));
     });
 
+
     // ========================================================
     // --- LÓGICA DO SISTEMA MULTIPLAYER (CO-OP & AMIGOS) ---
     // ========================================================
@@ -676,6 +741,7 @@
         ouvirConvitesMultiplayer();
     }
 
+    // Buscar Operadores para adicionar
     document.getElementById('btnSearchUser').addEventListener('click', async () => {
         const searchStr = document.getElementById('searchUserStr').value.trim().toLowerCase();
         const resultsDiv = document.getElementById('userSearchResults');
@@ -692,21 +758,25 @@
                 card.className = "friend-card";
                 card.innerHTML = `
                     <span style="color:${u.color}">${u.name}</span>
-                    <button class="add-btn" data-uid="${u.uid}">Enviar Solicitação</button>
+                    <button class="add-btn" data-uid="${u.uid}" style="padding:5px 10px; font-size:11px; background:#ff9900;">Enviar Solicitação</button>
                 `;
                 resultsDiv.appendChild(card);
                 
-                card.querySelector('.add-btn').addEventListener('click', () => {
+                card.querySelector('.add-btn').addEventListener('click', async () => {
+                    const snapUser = await get(ref(db, `users/${currentUser.uid}`));
+                    const meuNomeAtualizado = snapUser.exists() ? snapUser.val().name : currentUser.displayName;
+                    
                     set(ref(db, `friend_requests/${u.uid}/${currentUser.uid}`), {
                         uid: currentUser.uid,
-                        name: currentUser.displayName
+                        name: meuNomeAtualizado
                     });
-                    alert("Solicitação enviada!");
+                    alert(`Solicitação enviada para ${u.name}!`);
                 });
             }
         });
     });
 
+    // Listar Amigos Adicionados
     function carregarListaAmigos() {
         onValue(ref(db, `friends/${currentUser.uid}`), (snapshot) => {
             const container = document.getElementById('friendsListContainer');
@@ -720,23 +790,29 @@
                 const card = document.createElement('div');
                 card.className = "friend-card";
                 card.innerHTML = `
-                    <span>${f.name}</span>
+                    <span style="color:#00ffff;">[ON] ${f.name}</span>
                     <div style="display:flex; gap:5px;">
-                        <button class="invite-btn" style="background:#00ff66;">Convidar pro PC</button>
-                        <button class="visit-btn" style="background:#00ffff;">Visitar PC</button>
+                        <button class="invite-btn" style="background:#00ff66; padding:5px 10px; font-size:11px;">Convidar pro PC</button>
+                        <button class="visit-btn" style="background:#00ffff; color:#000; padding:5px 10px; font-size:11px;">Visitar PC</button>
                     </div>
                 `;
                 container.appendChild(card);
 
-                card.querySelector('.invite-btn').addEventListener('click', () => {
+                // Convidar Amigo para a SUA sala
+                card.querySelector('.invite-btn').addEventListener('click', async () => {
+                    const snapUser = await get(ref(db, `users/${currentUser.uid}`));
+                    const meuNomeAtualizado = snapUser.exists() ? snapUser.val().name : currentUser.displayName;
+
                     set(ref(db, `multiplayer_invites/${f.uid}`), {
                         hostUid: currentUser.uid,
-                        hostName: currentUser.displayName,
+                        hostName: meuNomeAtualizado,
                         status: "pending"
                     });
                     entrarNaSalaFakePC(currentUser.uid, `Seu Próprio Desktop (Host)`);
+                    alert("Convite enviado! Aguardando o amigo entrar na sala...");
                 });
 
+                // Visitar a sala do AMIGO
                 card.querySelector('.visit-btn').addEventListener('click', () => {
                     entrarNaSalaFakePC(f.uid, `Desktop de ${f.name}`);
                 });
@@ -744,46 +820,48 @@
         });
     }
 
-    // LISTAR E ACEITAR PEDIDOS DE AMIZADE (CORRIGIDO AQUI)
+    // Listar Pedidos de Amizade Pendentes
     function carregarSolicitacoesPendentes() {
         onValue(ref(db, `friend_requests/${currentUser.uid}`), (snapshot) => {
             const container = document.getElementById('friendRequestsContainer');
             container.innerHTML = "";
             if(!snapshot.exists()) {
-                container.innerHTML = `<p style="color:#666; font-size:12px;">Nenhuma solicitação.</p>`;
+                container.innerHTML = `<p style="color:#666; font-size:12px;">Nenhuma solicitação pendente.</p>`;
                 return;
             }
             snapshot.forEach(childSnap => {
                 const req = childSnap.val();
                 const card = document.createElement('div');
                 card.className = "friend-card";
+                card.style.borderColor = "#ff9900";
                 card.innerHTML = `
-                    <span>${req.name}</span>
-                    <button class="accept-btn" style="background:#00ff66;">Aceitar</button>
+                    <span style="color:#ff9900;">${req.name}</span>
+                    <button class="accept-btn" style="background:#00ff66; padding:5px 10px; font-size:11px;">Aceitar</button>
                 `;
                 container.appendChild(card);
 
                 card.querySelector('.accept-btn').addEventListener('click', async () => {
-                    // Adiciona na lista mútua de amigos
+                    const snapUser = await get(ref(db, `users/${currentUser.uid}`));
+                    const meuNomeAtualizado = snapUser.exists() ? snapUser.val().name : currentUser.displayName;
+
                     await set(ref(db, `friends/${currentUser.uid}/${req.uid}`), { uid: req.uid, name: req.name });
-                    await set(ref(db, `friends/${req.uid}/${currentUser.uid}`), { uid: currentUser.uid, name: currentUser.displayName });
-                    // Apaga a solicitação respondida
-                    remove(ref(db, `friend_requests/${currentUser.uid}/${req.uid}`));
+                    await set(ref(db, `friends/${req.uid}/${currentUser.uid}`), { uid: currentUser.uid, name: meuNomeAtualizado });
+                    await remove(ref(db, `friend_requests/${currentUser.uid}/${req.uid}`));
                     alert("Amizade firmada na Matrix!");
                 });
             });
         });
     }
 
-    // INSTÂNCIAS DE CONVITE EM TEMPO REAL
+    // Ouvir Convites de Salas Multiplayer
     function ouvirConvitesMultiplayer() {
         onValue(ref(db, `multiplayer_invites/${currentUser.uid}`), (snapshot) => {
             if(!snapshot.exists()) return;
-            const invite = snapshot.val();
-            if(invite.status === "pending") {
-                if(confirm(`${invite.hostName} está te chamando para monitorar o PC dele. Aceitar incursão?`)) {
+            const inv = snapshot.val();
+            if(inv.status === "pending") {
+                if(confirm(`${inv.hostName} está te chamando para monitorar o PC dele. Aceitar incursão?`)) {
                     update(ref(db, `multiplayer_invites/${currentUser.uid}`), { status: "accepted" });
-                    entrarNaSalaFakePC(invite.hostUid, `Desktop de ${invite.hostName}`);
+                    entrarNaSalaFakePC(inv.hostUid, `Desktop de ${inv.hostName}`);
                 } else {
                     remove(ref(db, `multiplayer_invites/${currentUser.uid}`));
                 }
@@ -791,57 +869,97 @@
         });
     }
 
-    // ENTRAR NO QUARTO VIRTUAL MULTIPLAYER (RENDERIZADOR DE CURSORES)
-    function entrarNaSalaFakePC(roomId, roomTitle) {
+    // --- RENDERIZAR O PC FAKE RETRO ---
+    function entrarNaSalaFakePC(roomUid, titleText) {
+        document.getElementById('roomTitle').innerText = `[SALA] ${titleText.toUpperCase()}`;
         document.getElementById('fake-pc-room').style.display = "block";
-        document.getElementById('roomTitle').innerText = `[SALA] ${roomTitle.toUpperCase()}`;
         
-        currentRoomRef = ref(db, `rooms/${roomId}/users`);
-        userMouseRef = ref(db, `rooms/${roomId}/users/${currentUser.uid}`);
+        currentRoomRef = ref(db, `rooms/${roomUid}`);
 
-        // Rastreia e injeta o movimento do mouse no Firebase
+        ouvirElementosDaSala();
+
+        document.getElementById('fake-pc-room').addEventListener('mousemove', enviarPosicaoMouse);
+    }
+
+    function enviarPosicaoMouse(e) {
+        if(!currentRoomRef || !currentUser) return;
         const canvas = document.getElementById('multiplayer-canvas');
-        canvas.onmousemove = (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const x = ((e.clientX - rect.left) / rect.width) * 100;
-            const y = ((e.clientY - rect.top) / rect.height) * 100;
-            
-            set(userMouseRef, {
-                name: currentUser.displayName,
-                x: x,
-                y: y,
-                lastSeen: Date.now()
-            });
-        };
+        const canvasRect = canvas.getBoundingClientRect();
+        
+        const pctX = ((e.clientX - canvasRect.left) / canvasRect.width) * 100;
+        const pctY = ((e.clientY - canvasRect.top) / canvasRect.height) * 100;
 
-        // Renderiza os cursores/stickmans de todos na sala
-        const roomUsersArea = document.getElementById('roomStickmans');
-        onValue(currentRoomRef, (snapshot) => {
-            roomUsersArea.innerHTML = "";
-            if(!snapshot.exists()) return;
-            
-            snapshot.forEach(childSnap => {
-                const u = childSnap.val();
-                if(childSnap.key !== currentUser.uid && (Date.now() - u.lastSeen < 6000)) {
-                    const cursor = document.createElement('div');
-                    cursor.className = "multiplayer-cursor";
-                    cursor.style.left = `${u.x}%`;
-                    cursor.style.top = `${u.y}%`;
-                    cursor.innerText = `👤 ${u.name}`;
-                    roomUsersArea.appendChild(cursor);
-                }
+        get(ref(db, `users/${currentUser.uid}`)).then(snap => {
+            const meuNome = snap.exists() ? snap.val().name : currentUser.displayName;
+            update(child(currentRoomRef, `cursors/${currentUser.uid}`), {
+                x: pctX,
+                y: pctY,
+                name: meuNome,
+                lastSeen: Date.now()
             });
         });
     }
 
-    // SAIR DO MODO FAKE PC
+    function ouvirElementosDaSala() {
+        if(!currentRoomRef) return;
+
+        onValue(currentRoomRef, (snapshot) => {
+            const canvas = document.getElementById('multiplayer-canvas');
+            
+            // Remove cursores antigos
+            document.querySelectorAll('.multiplayer-cursor').forEach(c => c.remove());
+
+            if(!snapshot.exists()) return;
+            const roomData = snapshot.val();
+
+            // 1. Renderizar cursores remotos (dos amigos na sala)
+            if(roomData.cursors) {
+                Object.keys(roomData.cursors).forEach(uid => {
+                    if(uid === currentUser.uid) return; // Não desenhar o próprio mouse
+                    
+                    const mouse = roomData.cursors[uid];
+                    // Se o mouse ficou parado muito tempo (10s), ignora (timeout de segurança)
+                    if(Date.now() - mouse.lastSeen > 10000) return;
+                    
+                    const cursorImg = document.createElement('div');
+                    cursorImg.className = "multiplayer-cursor";
+                    cursorImg.style.left = `${mouse.x}%`;
+                    cursorImg.style.top = `${mouse.y}%`;
+                    
+                    // Coloca a imagem image_0fd01b.png como background
+                    cursorImg.style.backgroundImage = "url('image_0fd01b.png')";
+                    cursorImg.style.backgroundSize = "contain";
+                    cursorImg.style.backgroundRepeat = "no-repeat";
+                    cursorImg.style.backgroundColor = "transparent";
+                    cursorImg.style.border = "none";
+                    cursorImg.style.width = "24px";
+                    cursorImg.style.height = "24px";
+
+                    // Coloca o nome do amigo em cima do mouse dele
+                    const nameTag = document.createElement('span');
+                    nameTag.innerText = mouse.name;
+                    nameTag.style.position = "absolute";
+                    nameTag.style.top = "-15px";
+                    nameTag.style.left = "15px";
+                    nameTag.style.color = "#00ffff";
+                    nameTag.style.background = "#000";
+                    nameTag.style.padding = "2px 4px";
+                    nameTag.style.fontSize = "10px";
+                    nameTag.style.border = "1px solid #00ffff";
+                    
+                    cursorImg.appendChild(nameTag);
+                    canvas.appendChild(cursorImg);
+                });
+            }
+        });
+    }
+
     document.getElementById('btnSairSala').addEventListener('click', () => {
-        if(userMouseRef) remove(userMouseRef);
+        if(currentRoomRef && currentUser) {
+            remove(child(currentRoomRef, `cursors/${currentUser.uid}`));
+        }
+        document.getElementById('fake-pc-room').removeEventListener('mousemove', enviarPosicaoMouse);
         document.getElementById('fake-pc-room').style.display = "none";
-        document.getElementById('multiplayer-canvas').onmousemove = null;
-        userMouseRef = null;
         currentRoomRef = null;
     });
 </script>
-</body>
-</html>
