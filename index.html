@@ -140,12 +140,13 @@
             background: #000;
             border: 1px solid #333;
             padding: 10px;
-            height: 220px;
+            height: 250px;
             overflow-y: auto;
         }
         .log-entry { margin-bottom: 8px; border-bottom: 1px solid #1a1a1a; padding-bottom: 4px; font-size: 13px;}
         .log-user { color: #00ffff; }
         .log-ai { color: #ff3333; }
+        .log-meta { color: #ff9900; font-weight: bold; }
 
         /* Estilo do Feed de Posts e Redes Sociais */
         .post-card {
@@ -229,7 +230,7 @@
         <h3 style="color: #ff9900; margin-top:0;">[ CONSULTAR BANCO DE CONSCIÊNCIA ]</h3>
         <p style="font-size:12px; color:#aaa;">Qualquer Stickman vivo ou gerado por IA em sua conta pode ter suas memórias lidas remotamente aqui.</p>
         <div class="search-box">
-            <input type="text" id="stickmanName" placeholder="Digite o codinome do Stickman para sincronizar...">
+            <input type="text" id="stickmanName" placeholder="Digite o codinome ou nome alternativo do Stickman...">
             <button id="btnBuscar">Acessar Mente</button>
         </div>
 
@@ -240,10 +241,10 @@
                     <h2 style="margin-top:0; color: #00ffff;" id="stickName">NOME DA ENTIDADE</h2>
                     <p>Injeção de Sistema: <span class="highlight" id="stickDate">--/--/----</span></p>
                     <p>Baixas em Combate: <span class="highlight" style="color:red;" id="stickDeaths">0</span></p>
-                    <p id="stickHistoryRow" style="display:none;">Variações de Nome: <span class="highlight" style="color:#ffcc00;" id="stickHistory">Nenhuma</span></p>
+                    <p id="stickHistoryRow" style="display:none;">Nomes Alternativos: <span class="highlight" style="color:#ffcc00;" id="stickHistory">Nenhum</span></p>
                 </div>
             </div>
-            <h4 style="color: #ff9900; margin-bottom: 5px; text-transform: uppercase;">[ Registro Fluido de Memórias ]</h4>
+            <h4 style="color: #ff9900; margin-bottom: 5px; text-transform: uppercase;">[ Registro Fluido de Memórias e Dados Emocionais ]</h4>
             <div class="memory-log" id="memoryLog"></div>
         </div>
     </div>
@@ -258,7 +259,7 @@
             </div>
         </div>
         <div id="feedContainer">
-            <p style="color:#666;">Carregando atualizações da Matrix...</p>
+            <p style="color:#666;">Carregando updates da Matrix...</p>
         </div>
     </div>
 
@@ -273,7 +274,7 @@
             <div class="group-card">
                 <h3>Fundação SCP</h3>
                 <p style="font-size:12px; color:#aaa;">Estudos de entidades perigosas infiltradas no desktop.</p>
-                <button onclick="alert('Contido. Protegido. Protegido!')" style="padding:5px 10px; font-size:11px;">Entrar no Grupo</button>
+                <button onclick="alert('Contido. Protegido. Salvaguardado!')" style="padding:5px 10px; font-size:11px;">Entrar no Grupo</button>
             </div>
             <div class="group-card">
                 <h3>Caçadores de Void</h3>
@@ -313,10 +314,9 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
     import { getDatabase, ref, set, push, onValue, get, child } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
-    // Credenciais Oficiais Atualizadas do seu Firebase Stickland
     const firebaseConfig = {
         apiKey: "AIzaSyA2hBfWW0bTd-N9ky95AJEweP6SyNMogyY",
         authDomain: "stickland-3ccaa.firebaseapp.com",
@@ -345,54 +345,61 @@
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
         
         document.getElementById(`tab-${tabName}`).classList.add('active');
-        event.currentTarget.classList.add('active');
+        if(event && event.currentTarget) {
+            event.currentTarget.classList.add('active');
+        }
     }
 
-    // Login com Janela Popup do Google
-    document.getElementById('btnGoogle').addEventListener('click', () => {
-        signInWithPopup(auth, provider)
-            .then(async (result) => {
-                userSession.uid = result.user.uid;
-                userSession.displayName = result.user.displayName;
-                
-                // Atualizar Status Visual
-                const statusElement = document.getElementById('connectionStatus');
-                statusElement.innerText = `[+] TERMINAL AUTENTICADO: OPERANDO COMO ${result.user.displayName.toUpperCase()}`;
-                statusElement.style.color = "#00ff66";
-                
-                document.getElementById('mainNav').style.display = "flex";
-                document.getElementById('authArea').style.display = "none";
-                
-                // Puxar customizações do banco de dados (se houver)
-                const snapshot = await get(ref(db, `users/${userSession.uid}`));
-                if (snapshot.exists()) {
-                    const data = snapshot.val();
-                    userSession.customName = data.customName || "";
-                    userSession.color = data.color || "#00ffff";
-                }
-                
-                document.getElementById('profileName').value = userSession.customName || userSession.displayName;
-                document.getElementById('profileColor').value = userSession.color;
+    // [CORREÇÃO] Listener de Persistência de Estado de Login do Firebase
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            userSession.uid = user.uid;
+            userSession.displayName = user.displayName;
+            
+            const statusElement = document.getElementById('connectionStatus');
+            statusElement.innerText = `[+] TERMINAL AUTENTICADO: OPERANDO COMO ${user.displayName.toUpperCase()}`;
+            statusElement.style.color = "#00ff66";
+            
+            document.getElementById('mainNav').style.display = "flex";
+            document.getElementById('authArea').style.display = "none";
+            
+            const snapshot = await get(ref(db, `users/${userSession.uid}`));
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                userSession.customName = data.customName || "";
+                userSession.color = data.color || "#00ffff";
+            }
+            
+            document.getElementById('profileName').value = userSession.customName || userSession.displayName;
+            document.getElementById('profileColor').value = userSession.color;
 
-                // Ativar escutas contínuas em tempo real
-                startRealtimeListeners();
-            })
-            .catch((error) => {
-                console.error("Erro no Login:", error);
-                alert("Falha de autenticação. Confirme se adicionou matheusbemcipriamo-beep.github.io no console do Firebase!");
-            });
+            startRealtimeListeners();
+        } else {
+            // Caso não esteja logado, exibe os botões normais
+            document.getElementById('mainNav').style.display = "none";
+            document.getElementById('authArea').style.display = "block";
+            const statusElement = document.getElementById('connectionStatus');
+            statusElement.innerText = `[!] CONEXÃO NEURAL: INATIVA - REQUISITA DECODIFICAÇÃO DE CONTA`;
+            statusElement.style.color = "#ff3333";
+        }
     });
 
-    // Funções em Tempo Real (Feed de Notícias e Chat Global)
+    // Login Manual por Clique
+    document.getElementById('btnGoogle').addEventListener('click', () => {
+        signInWithPopup(auth, provider).catch((error) => {
+            console.error("Erro no Login:", error);
+            alert("Falha de autenticação.");
+        });
+    });
+
     function startRealtimeListeners() {
-        // 1. Escutar Novas Postagens no Feed
         onValue(ref(db, 'feed_posts'), (snapshot) => {
             const feedContainer = document.getElementById('feedContainer');
             feedContainer.innerHTML = "";
             if(snapshot.exists()) {
                 const posts = [];
                 snapshot.forEach(childSnap => {
-                    posts.unshift({ id: childSnap.key, ...childSnap.val() }); // Coloca os mais novos no topo
+                    posts.unshift({ id: childSnap.key, ...childSnap.val() });
                 });
                 posts.forEach(post => {
                     feedContainer.innerHTML += `
@@ -407,7 +414,6 @@
             }
         });
 
-        // 2. Escutar Chat de Terminais Compartilhados
         onValue(ref(db, 'global_chat'), (snapshot) => {
             const chatWindow = document.getElementById('chatWindow');
             chatWindow.innerHTML = "";
@@ -427,14 +433,12 @@
             }
         });
         
-        // Loop Heartbeat para o Python saber que o site está aberto
         setInterval(() => {
             set(ref(db, 'server_status'), { is_online: true, last_ping: Date.now() })
                 .catch(err => console.log("Erro no ping:", err));
         }, 5000);
     }
 
-    // Ação: Criar Postagem no Feed
     document.getElementById('btnPostar').addEventListener('click', () => {
         const text = document.getElementById('postText').value.trim();
         if(!text) return;
@@ -451,7 +455,6 @@
         });
     });
 
-    // Ação: Enviar Mensagem no Chat Coletivo
     document.getElementById('btnEnviarChat').addEventListener('click', () => {
         const msgInput = document.getElementById('chatMessage');
         const text = msgInput.value.trim();
@@ -469,7 +472,6 @@
         });
     });
 
-    // Ação: Gravar Customização de Perfil no Firebase
     document.getElementById('btnSalvarPerfil').addEventListener('click', () => {
         const customName = document.getElementById('profileName').value.trim();
         const color = document.getElementById('profileColor').value;
@@ -486,13 +488,12 @@
         });
     });
 
-    // Ação: Buscar Memórias de Entidades (Matrix HUD) - Atualizado para suportar variações de nomes!
+    // [CORREÇÃO/MELHORIA] Acessar e exibir TUDO armazenado sem apagar nada e vinculando nomes passados
     document.getElementById('btnBuscar').addEventListener('click', async () => {
         const nomeDigitado = document.getElementById('stickmanName').value.trim();
         if (!nomeDigitado) return;
 
         try {
-            // Primeiro, tenta buscar diretamente pelo nó exato
             let resposta = await get(ref(db, `stickmans/${nomeDigitado}`));
             let dados = null;
             let nomeFinal = nomeDigitado;
@@ -500,23 +501,23 @@
             if (resposta.exists()) {
                 dados = resposta.val();
             } else {
-                // Se não achou direto, varre os stickmans para ver se o nome digitado está na lista de variações (historico)
                 const todosStickmansSnap = await get(ref(db, 'stickmans'));
                 if (todosStickmansSnap.exists()) {
                     todosStickmansSnap.forEach(childSnap => {
                         const sData = childSnap.val();
-                        // Verifica se existe o campo "historico_nomes" e se ele contém o nome procurado
-                        if (sData.historico_nomes && Array.isArray(sData.historico_nomes)) {
-                            const achouVariacao = sData.historico_nomes.some(n => n.toLowerCase() === nomeDigitado.toLowerCase());
-                            if (achouVariacao) {
-                                dados = sData;
-                                nomeFinal = childSnap.key; // O nome principal/atual dele no banco
-                            }
-                        } else if (sData.historico_nomes && typeof sData.historico_nomes === 'string') {
-                            if (sData.historico_nomes.toLowerCase().includes(nomeDigitado.toLowerCase())) {
-                                dados = sData;
-                                nomeFinal = childSnap.key;
-                            }
+                        // Varre tanto "historico_nomes" quanto o padrão "nomes_passados" usado no sandbox python
+                        let nomesParaChecar = [];
+                        if (sData.historico_nomes) {
+                            nomesParaChecar = nomesParaChecar.concat(Array.isArray(sData.historico_nomes) ? sData.historico_nomes : [sData.historico_nomes]);
+                        }
+                        if (sData.nomes_passados) {
+                            nomesParaChecar = nomesParaChecar.concat(Array.isArray(sData.nomes_passados) ? sData.nomes_passados : [sData.nomes_passados]);
+                        }
+
+                        const achouVariacao = nomesParaChecar.some(n => typeof n === 'string' && n.toLowerCase() === nomeDigitado.toLowerCase());
+                        if (achouVariacao) {
+                            dados = sData;
+                            nomeFinal = childSnap.key; 
                         }
                     });
                 }
@@ -526,14 +527,20 @@
                 document.getElementById('profilePanel').style.display = "block";
                 document.getElementById('stickName').innerText = nomeFinal.toUpperCase();
                 document.getElementById('stickDate').innerText = dados.creation_date || dados.criacao || "Desconhecida";
-                document.getElementById('stickDeaths').innerText = dados.mortes || "0";
+                document.getElementById('stickDeaths').innerText = dados.mortes !== undefined ? dados.mortes : "0";
                 
-                // Mostrar a linha de histórico caso existam variações salvas
                 const histRow = document.getElementById('stickHistoryRow');
                 const histSpan = document.getElementById('stickHistory');
-                if (dados.historico_nomes) {
+                
+                let arrayNomes = [];
+                if(dados.historico_nomes) arrayNomes = arrayNomes.concat(dados.historico_nomes);
+                if(dados.nomes_passados) arrayNomes = arrayNomes.concat(dados.nomes_passados);
+                // Remove duplicatas da exibição visual
+                arrayNomes = [...new Set(arrayNomes)].filter(n => n.toLowerCase() !== nomeFinal.toLowerCase());
+
+                if (arrayNomes.length > 0) {
                     histRow.style.display = "block";
-                    histSpan.innerText = Array.isArray(dados.historico_nomes) ? dados.historico_nomes.join(", ") : dados.historico_nomes;
+                    histSpan.innerText = arrayNomes.join(", ");
                 } else {
                     histRow.style.display = "none";
                 }
@@ -546,6 +553,23 @@
 
                 const log = document.getElementById('memoryLog');
                 log.innerHTML = ""; 
+
+                // Exibir propriedades dinâmicas adicionais na mente (Inimigos, Amigos, Traumas, etc.)
+                let metadadosExtra = "";
+                const camposParaVarrer = ["inimigos", "amigos", "traumas", "usuarios_odiados", "pensamentos_importantes", "historico_traumas"];
+                
+                camposParaVarrer.forEach(campo => {
+                    if (dados[campo]) {
+                        let conteudo = Array.isArray(dados[campo]) ? dados[campo].join(", ") : JSON.stringify(dados[campo]);
+                        metadadosExtra += `<div class="log-entry"><span class="log-meta">[CONHECIMENTO - ${campo.toUpperCase()}]:</span> ${conteudo}</div>`;
+                    }
+                });
+                
+                if (metadadosExtra !== "") {
+                    log.innerHTML += metadadosExtra;
+                }
+
+                // Conversas Normais
                 if(dados.memory && dados.memory.length > 0) {
                     dados.memory.forEach(conversa => {
                         log.innerHTML += `
@@ -555,9 +579,12 @@
                             </div>
                         `;
                     });
-                    log.scrollTop = log.scrollHeight;
+                }
+                
+                if (log.innerHTML === "") {
+                    log.innerHTML = "<p style='color: #555;'>Nenhuma memória ou registro emocional detectado. Mente vazia.</p>";
                 } else {
-                    log.innerHTML = "<p style='color: #555;'>Nenhuma memória registrada ainda. Mente em branco.</p>";
+                    log.scrollTop = log.scrollHeight;
                 }
             } else {
                 alert("Entidade não localizada nos servidores Stickland. Injete-a primeiro via Paint Studio.");
