@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matrix Central - Stickman HUD</title>
+    <title>Stickland - Matrix HUD</title>
     <style>
         /* Estilo Retro / Newgrounds / Hacker */
         body {
@@ -16,7 +16,7 @@
         .hud-container {
             max-width: 800px;
             margin: 0 auto;
-            border: 3px solid #ff9900; /* Laranja clássico */
+            border: 3px solid #ff9900;
             background-color: #2b2b2b;
             padding: 20px;
             box-shadow: 0px 0px 15px #ff990055;
@@ -63,7 +63,7 @@
         button:hover { background: #ffcc00; }
         
         /* Perfil da Entidade */
-        .profile { display: none; } /* Escondido até pesquisar */
+        .profile { display: none; }
         .profile-header {
             display: flex;
             gap: 20px;
@@ -101,12 +101,13 @@
 
 <div class="hud-container">
     <div class="header">
-        <h1>NÚCLEO DE CONSCIÊNCIA CENTRAL</h1>
+        <h1>NÚCLEO DE CONSCIÊNCIA - STICKLAND</h1>
         <p>Acesso obrigatório para estabilização de memórias.</p>
     </div>
 
     <div class="search-box">
         <input type="email" id="userEmail" placeholder="Seu E-mail de Desenvolvedor...">
+        <button id="btnConectar" onclick="conectarStickland()">Conectar</button>
     </div>
 
     <div class="status-bar" id="connectionStatus">
@@ -130,7 +131,7 @@
 
         <h3 style="color: #ff9900; margin-top: 20px;">[ LOG DE MEMÓRIA ]</h3>
         <div class="memory-log" id="memoryLog">
-            </div>
+        </div>
     </div>
 </div>
 
@@ -141,17 +142,26 @@
     const FIREBASE_URL = "https://SEU-PROJETO-AQUI-default-rtdb.firebaseio.com";
     let isConnected = false;
 
-    // Detecta o e-mail para simular o login e iniciar o Heartbeat
-    document.getElementById('userEmail').addEventListener('input', function(e) {
-        if(e.target.value.includes('@')) {
-            isConnected = true;
-            document.getElementById('connectionStatus').innerText = "[+] CONEXÃO NEURAL: ESTÁVEL E ATIVA";
-            document.getElementById('searchArea').style.display = "flex";
-            document.getElementById('userEmail').disabled = true; // Trava o e-mail
-        }
-    });
+    // Nova função de login que resolve o bug do "@"
+    function conectarStickland() {
+        const emailInput = document.getElementById('userEmail');
+        const valorEmail = emailInput.value;
 
-    // O "Heartbeat" (Batimento Cardíaco): Avisa o Python que o site tá aberto
+        // Checa se o email tem @ e pelo menos alguma coisa depois dele
+        if(valorEmail.includes('@') && valorEmail.length > 3) {
+            isConnected = true;
+            document.getElementById('connectionStatus').innerText = "[+] CONEXÃO NEURAL DE STICKLAND: ESTÁVEL E ATIVA";
+            document.getElementById('searchArea').style.display = "flex";
+            
+            // Trava o campo e esconde o botão de conectar
+            emailInput.disabled = true;
+            document.getElementById('btnConectar').style.display = 'none';
+        } else {
+            alert("Bro, digite um e-mail válido com o '@' para acessar a Stickland!");
+        }
+    }
+
+    // O "Heartbeat" (Batimento Cardíaco): Avisa o Python que a Stickland tá aberta
     setInterval(() => {
         if (isConnected) {
             fetch(`${FIREBASE_URL}/server_status.json`, {
@@ -160,7 +170,7 @@
                 body: JSON.stringify({ is_online: true, last_ping: Date.now() })
             }).catch(err => console.log("Erro no ping:", err));
         }
-    }, 5000); // Roda a cada 5 segundos
+    }, 5000); 
 
     // Função para puxar os dados do Stickman
     async function buscarMemoria() {
@@ -177,16 +187,14 @@
                 document.getElementById('stickDate').innerText = dados.criacao || "Desconhecida";
                 document.getElementById('stickDeaths').innerText = dados.mortes || "0";
                 
-                // Renderiza a imagem PNG a partir do texto Base64
                 if(dados.avatar_b64) {
                     document.getElementById('stickAvatar').src = `data:image/png;base64,${dados.avatar_b64}`;
                 } else {
                     document.getElementById('stickAvatar').src = ""; 
                 }
 
-                // Renderiza as memórias (conversas)
                 const log = document.getElementById('memoryLog');
-                log.innerHTML = ""; // Limpa a tela anterior
+                log.innerHTML = ""; 
                 if(dados.memory && dados.memory.length > 0) {
                     dados.memory.forEach(conversa => {
                         log.innerHTML += `
@@ -196,13 +204,12 @@
                             </div>
                         `;
                     });
-                    // Rola pro final automaticamente
                     log.scrollTop = log.scrollHeight;
                 } else {
                     log.innerHTML = "<p style='color: #666;'>Nenhuma memória registrada ainda. Mente em branco.</p>";
                 }
             } else {
-                alert("Entidade não encontrada na Matrix. Crie ela no seu PC primeiro!");
+                alert("Entidade não encontrada em Stickland. Crie ela no seu PC primeiro!");
             }
         } catch (error) {
             console.error("Erro ao buscar na Matrix:", error);
