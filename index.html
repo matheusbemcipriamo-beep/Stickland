@@ -379,6 +379,7 @@
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
     import { getDatabase, ref, set, push, onValue, get, child } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
+    // Suas credenciais do Firebase restauradas perfeitamente:
     const firebaseConfig = {
         apiKey: "AIzaSyA2hBfWW0bTd-N9ky95AJEweP6SyNMogyY",
         authDomain: "stickland-3ccaa.firebaseapp.com",
@@ -405,7 +406,7 @@
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
         document.getElementById(`tab-${tabName}`).classList.add('active');
-        if(event && event.currentTarget) event.currentTarget.classList.add('active');
+        if(window.event && window.event.currentTarget) window.event.currentTarget.classList.add('active');
     }
 
     onAuthStateChanged(auth, async (user) => {
@@ -433,11 +434,15 @@
         } else {
             document.getElementById('mainNav').style.display = "none";
             document.getElementById('authArea').style.display = "block";
+            
+            const statusElement = document.getElementById('connectionStatus');
+            statusElement.innerText = "[!] CONEXÃO NEURAL: INATIVA - REQUISITA DECODIFICAÇÃO DE CONTA";
+            statusElement.style.color = "#ff3333";
         }
     });
 
     document.getElementById('btnGoogle').addEventListener('click', () => {
-        signInWithPopup(auth, provider).catch(() => alert("Falha de autenticação."));
+        signInWithPopup(auth, provider).catch(() => alert("Falha de autenticação com o Google."));
     });
 
     function startRealtimeListeners() {
@@ -482,7 +487,6 @@
         }, 5000);
     }
 
-    // Ações das redes sociais normais
     document.getElementById('btnPostar').addEventListener('click', () => {
         const text = document.getElementById('postText').value.trim();
         if(!text) return;
@@ -514,7 +518,6 @@
             .then(() => { alert("Perfil sincronizado com sucesso!"); });
     });
 
-    // MATE E LOG DE DADOS ABSOLUTO DO STICKMAN
     document.getElementById('btnBuscar').addEventListener('click', async () => {
         const nomeDigitado = document.getElementById('stickmanName').value.trim();
         if (!nomeDigitado) return;
@@ -552,7 +555,6 @@
                 document.getElementById('stickDeaths').innerText = dados.mortes !== undefined ? dados.mortes : "0";
                 document.getElementById('stickVisits').innerText = dados.visitas_stickland !== undefined ? dados.visitas_stickland : "1";
                 
-                // Determinar Facção Visualmente
                 const facElem = document.getElementById('stickFaction');
                 const fac = dados.alinhamento ? dados.alinhamento.toLowerCase() : "cidadao";
                 if(fac === "heroi") {
@@ -563,7 +565,6 @@
                     facElem.innerText = "CIDADÃO COMUM"; facElem.className = "faction-citizen";
                 }
 
-                // Histórico de codinomes antigos
                 let arrayNomes = [];
                 if(dados.historico_nomes) arrayNomes = arrayNomes.concat(dados.historico_nomes);
                 if(dados.nomes_passados) arrayNomes = arrayNomes.concat(dados.nomes_passados);
@@ -575,14 +576,12 @@
                     document.getElementById('stickHistoryRow').style.display = "none";
                 }
                 
-                // Imagem / Avatar
                 if(dados.image_b64 || dados.avatar_b64) {
                     document.getElementById('stickAvatar').src = `data:image/png;base64,${dados.image_b64 || dados.avatar_b64}`;
                 } else {
                     document.getElementById('stickAvatar').src = ""; 
                 }
 
-                // LIMPAR BLOCOS E DISTRIBUIR OS DADOS ABSOLUTOS
                 const bCore = document.getElementById('blockCoreData');
                 const bConversations = document.getElementById('blockConversations');
                 const bSocial = document.getElementById('blockSocialNet');
@@ -590,7 +589,6 @@
                 
                 bCore.innerHTML = ""; bConversations.innerHTML = ""; bSocial.innerHTML = ""; bCombat.innerHTML = "";
 
-                // 1. Preencher Core / Pensamentos Importantes
                 if(dados.pensamentos_importantes) {
                     bCore.innerHTML += `<div class="log-entry"><span class="log-meta">[PENSAMENTO CENTRAL]:</span> ${dados.pensamentos_importantes}</div>`;
                 }
@@ -600,7 +598,6 @@
                 }
                 if(bCore.innerHTML === "") bCore.innerHTML = "<p style='color:#555;'>Mente sem diretrizes anômalas estritas.</p>";
 
-                // 2. Preencher Conversas Completas
                 if(dados.memory && dados.memory.length > 0) {
                     dados.memory.forEach(c => {
                         bConversations.innerHTML += `
@@ -613,7 +610,6 @@
                     bConversations.innerHTML = "<p style='color:#555;'>Nenhum comando de voz gravado na memória de curto prazo.</p>";
                 }
 
-                // 3. Preencher Rede Social (Amigos e Inimigos)
                 let amg = dados.amigos ? (Array.isArray(dados.amigos) ? dados.amigos.join(", ") : dados.amigos) : "Nenhum amigo registrado";
                 let inim = dados.inimigos ? (Array.isArray(dados.inimigos) ? dados.inimigos.join(", ") : dados.inimigos) : "Nenhum rival declarado";
                 bSocial.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#00ff66;">[AMIGOS]:</span> ${amg}</div>`;
@@ -622,17 +618,15 @@
                     bSocial.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff00ff;">[HUMANOS ODIADOS]:</span> ${dados.usuarios_odiados}</div>`;
                 }
 
-                // 4. Preencher Atividades na Cidade / Combate e Ataques
                 if(dados.historico_combates && dados.historico_combates.length > 0) {
                     dados.historico_combates.forEach(combate => {
                         bCombat.innerHTML += `<div class="log-entry" style="color:#ffcc00;">[BATALHA]: ${combate}</div>`;
                     });
                 } else {
-                    // Texto padrão contextual baseado no alinhamento caso não existam logs explícitos ainda
                     if(fac === "vilao") {
-                        bCombat.innerHTML = "<div class="log-entry" style='color:#ff3333;'>[ALERTA]: Registros indicam vandalismo nas fronteiras da Stickland!</div>";
+                        bCombat.innerHTML = "<div class='log-entry' style='color:#ff3333;'>[ALERTA]: Registros indicam vandalismo nas fronteiras da Stickland!</div>";
                     } else if(fac === "heroi") {
-                        bCombat.innerHTML = "<div class="log-entry" style='color:#00ff66;'>[PATRULHA]: Entidade detectada protegendo civis e interceptando ameaças.</div>";
+                        bCombat.innerHTML = "<div class='log-entry' style='color:#00ff66;'>[PATRULHA]: Entidade detectada protegendo civis e interceptando ameaças.</div>";
                     } else {
                         bCombat.innerHTML = "<p style='color:#555;'>Nenhum combate violento recente registrado na central.</p>";
                     }
