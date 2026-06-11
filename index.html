@@ -269,11 +269,16 @@
 
         .multiplayer-cursor {
             position: absolute;
-            width: 30px;
-            height: 30px;
+            background: #00ffff;
+            color: #000;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-family: monospace;
+            font-weight: bold;
+            border: 1px solid #fff;
             pointer-events: none;
             z-index: 10000;
-            transition: left 0.1s linear, top 0.1s linear;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -450,10 +455,9 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, child, update, onValue, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, get, child, update, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // Configuração do Firebase apontando para o seu banco do Stickland
     const firebaseConfig = {
         databaseURL: "https://stickland-3ccaa-default-rtdb.firebaseio.com"
     };
@@ -465,7 +469,7 @@
 
     let currentUser = null;
     let currentRoomRef = null;
-    let fallbackRoomInterval = null;
+    let userMouseRef = null;
 
     // --- SISTEMA DE ABAS ---
     const tabs = document.querySelectorAll('.tab-btn');
@@ -494,7 +498,6 @@
             statusBox.style.color = "#00ff66";
             statusBox.innerText = `[+] TERMINAL ATIVO: OPERADOR CONECTADO COMO ${user.displayName.toUpperCase()}`;
 
-            // Registrar ou verificar perfil na Matrix
             const userRef = ref(db, `users/${user.uid}`);
             const snapshot = await get(userRef);
             if (!snapshot.exists()) {
@@ -506,7 +509,6 @@
                 });
             }
             
-            // Ativar rotinas e listeners em tempo real
             initChat();
             initFeed();
             initMultiplayerSystem();
@@ -529,7 +531,6 @@
             let foundKey = null;
             let foundData = null;
 
-            // Busca exata ou por aproximação de nome
             snapshot.forEach(childSnap => {
                 const data = childSnap.val();
                 if (data.name && data.name.toLowerCase().includes(queryName.toLowerCase())) {
@@ -540,7 +541,6 @@
 
             if (!foundData) return alert("Aviso: Consciência limpa ou não registrada nos distritos ativos.");
 
-            // Descriptografar e preencher a HUD Matrix
             document.getElementById('stickName').innerText = foundData.name.toUpperCase();
             document.getElementById('stickUID').innerText = `#${foundKey.substring(0,6).toUpperCase()}`;
             document.getElementById('stickDate').innerText = foundData.creation_date || "Desconhecida";
@@ -550,7 +550,6 @@
             const avatarImg = document.getElementById('stickAvatar');
             avatarImg.src = foundData.image_b64 ? `data:image/png;base64,${foundData.image_b64}` : 'image_104ff9.png';
 
-            // Alinhamento de Facção visual
             const factionLabel = document.getElementById('stickFaction');
             if(foundData.faction === "hero") {
                 factionLabel.innerText = "Protetor do Distrito"; factionLabel.className = "faction-hero";
@@ -560,14 +559,12 @@
                 factionLabel.innerText = "Cidadão Comum"; factionLabel.className = "faction-citizen";
             }
 
-            // Memória Psicológica
             const coreBox = document.getElementById('blockCoreData');
             coreBox.innerHTML = `<div class="log-entry"><span class="log-meta">[MEMÓRIA]:</span> ${foundData.memory || "Nenhuma memória base injetada."}</div>`;
             if(foundData.skills) {
                 coreBox.innerHTML += `<div class="log-entry"><span class="log-meta">[ATRIBUTOS]:</span> Velocidade: ${foundData.skills.speed ? "Alta" : "Normal"} | Força: ${foundData.skills.strength || 1}</div>`;
             }
 
-            // Histórico de Conversas (Voz Inteligente)
             const convBox = document.getElementById('blockConversations');
             convBox.innerHTML = "";
             if (foundData.conversations) {
@@ -582,7 +579,6 @@
                 convBox.innerHTML = `<p style="color:#555;font-size:11px;">Sem logs de áudio recentes.</p>`;
             }
 
-            // Redes Sociais e Combate (Ganchos para expansões futuras)
             document.getElementById('blockSocialNet').innerHTML = `<p style="color:#555;font-size:11px;">Aliados padrão da malha urbana detectados.</p>`;
             document.getElementById('blockCombatLog').innerHTML = `<p style="color:#555;font-size:11px;">Última ação: Monitorando sandbox_gateway.json</p>`;
 
@@ -671,7 +667,6 @@
         }).then(() => alert("Identidade Virtual atualizada na Matrix!"));
     });
 
-
     // ========================================================
     // --- LÓGICA DO SISTEMA MULTIPLAYER (CO-OP & AMIGOS) ---
     // ========================================================
@@ -681,7 +676,6 @@
         ouvirConvitesMultiplayer();
     }
 
-    // Buscar Operadores para adicionar
     document.getElementById('btnSearchUser').addEventListener('click', async () => {
         const searchStr = document.getElementById('searchUserStr').value.trim().toLowerCase();
         const resultsDiv = document.getElementById('userSearchResults');
@@ -713,7 +707,6 @@
         });
     });
 
-    // Listar Amigos Adicionados
     function carregarListaAmigos() {
         onValue(ref(db, `friends/${currentUser.uid}`), (snapshot) => {
             const container = document.getElementById('friendsListContainer');
@@ -735,7 +728,6 @@
                 `;
                 container.appendChild(card);
 
-                // Convidar Amigo
                 card.querySelector('.invite-btn').addEventListener('click', () => {
                     set(ref(db, `multiplayer_invites/${f.uid}`), {
                         hostUid: currentUser.uid,
@@ -745,7 +737,6 @@
                     entrarNaSalaFakePC(currentUser.uid, `Seu Próprio Desktop (Host)`);
                 });
 
-                // Visitar Amigo diretamente
                 card.querySelector('.visit-btn').addEventListener('click', () => {
                     entrarNaSalaFakePC(f.uid, `Desktop de ${f.name}`);
                 });
@@ -753,7 +744,7 @@
         });
     }
 
-    // Listar Pedidos de Amizade
+    // LISTAR E ACEITAR PEDIDOS DE AMIZADE (CORRIGIDO AQUI)
     function carregarSolicitacoesPendentes() {
         onValue(ref(db, `friend_requests/${currentUser.uid}`), (snapshot) => {
             const container = document.getElementById('friendRequestsContainer');
@@ -768,141 +759,87 @@
                 card.className = "friend-card";
                 card.innerHTML = `
                     <span>${req.name}</span>
-                    <button class="accept-btn">Aceitar</button>
+                    <button class="accept-btn" style="background:#00ff66;">Aceitar</button>
                 `;
                 container.appendChild(card);
 
                 card.querySelector('.accept-btn').addEventListener('click', async () => {
+                    // Adiciona na lista mútua de amigos
                     await set(ref(db, `friends/${currentUser.uid}/${req.uid}`), { uid: req.uid, name: req.name });
                     await set(ref(db, `friends/${req.uid}/${currentUser.uid}`), { uid: currentUser.uid, name: currentUser.displayName });
-                    await set(ref(db, `friend_requests/${currentUser.uid}/${req.uid}`), null);
-                    alert("Amizade firmada!");
+                    // Apaga a solicitação respondida
+                    remove(ref(db, `friend_requests/${currentUser.uid}/${req.uid}`));
+                    alert("Amizade firmada na Matrix!");
                 });
             });
         });
     }
 
-    // Monitorar Convites Recebidos
+    // INSTÂNCIAS DE CONVITE EM TEMPO REAL
     function ouvirConvitesMultiplayer() {
         onValue(ref(db, `multiplayer_invites/${currentUser.uid}`), (snapshot) => {
             if(!snapshot.exists()) return;
-            const inv = snapshot.val();
-            if(inv.status === "pending") {
-                if(confirm(`${inv.hostName} está te convidando para acessar a Área de Trabalho remota dele. Aceitar?`)) {
+            const invite = snapshot.val();
+            if(invite.status === "pending") {
+                if(confirm(`${invite.hostName} está te chamando para monitorar o PC dele. Aceitar incursão?`)) {
                     update(ref(db, `multiplayer_invites/${currentUser.uid}`), { status: "accepted" });
-                    entrarNaSalaFakePC(inv.hostUid, `Desktop de ${inv.hostName}`);
+                    entrarNaSalaFakePC(invite.hostUid, `Desktop de ${invite.hostName}`);
                 } else {
-                    set(ref(db, `multiplayer_invites/${currentUser.uid}`), null);
+                    remove(ref(db, `multiplayer_invites/${currentUser.uid}`));
                 }
             }
         });
     }
 
-    // --- ENTRAR E RENDERIZAR O PC FAKE RETRO ---
-    function entrarNaSalaFakePC(roomUid, titleText) {
-        document.getElementById('roomTitle').innerText = `[SALA] ${titleText}`;
+    // ENTRAR NO QUARTO VIRTUAL MULTIPLAYER (RENDERIZADOR DE CURSORES)
+    function entrarNaSalaFakePC(roomId, roomTitle) {
         document.getElementById('fake-pc-room').style.display = "block";
+        document.getElementById('roomTitle').innerText = `[SALA] ${roomTitle.toUpperCase()}`;
         
-        currentRoomRef = ref(db, `rooms/${roomUid}`);
+        currentRoomRef = ref(db, `rooms/${roomId}/users`);
+        userMouseRef = ref(db, `rooms/${roomId}/users/${currentUser.uid}`);
 
-        // Sincronizar ratos e Stickmen
-        ouvirElementosDaSala();
+        // Rastreia e injeta o movimento do mouse no Firebase
+        const canvas = document.getElementById('multiplayer-canvas');
+        canvas.onmousemove = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            
+            set(userMouseRef, {
+                name: currentUser.displayName,
+                x: x,
+                y: y,
+                lastSeen: Date.now()
+            });
+        };
 
-        // Rastrear movimento do mouse real e enviar pro Firebase
-        document.getElementById('fake-pc-room').addEventListener('mousemove', enviarPosicaoMouse);
-    }
-
-    function enviarPosicaoMouse(e) {
-        if(!currentRoomRef || !currentUser) return;
-        const canvasRect = document.getElementById('multiplayer-canvas').getBoundingClientRect();
-        
-        // Converte a posição do mouse em porcentagem estável (0% a 100%)
-        const pctX = ((e.clientX - canvasRect.left) / canvasRect.width) * 100;
-        const pctY = ((e.clientY - canvasRect.top) / canvasRect.height) * 100;
-
-        update(child(currentRoomRef, `cursors/${currentUser.uid}`), {
-            x: pctX,
-            y: pctY,
-            name: currentUser.displayName
-        });
-    }
-
-    function ouvirElementosDaSala() {
-        if(!currentRoomRef) return;
-
-        // Renderizar cursores e Stickmen ativos
+        // Renderiza os cursores/stickmans de todos na sala
+        const roomUsersArea = document.getElementById('roomStickmans');
         onValue(currentRoomRef, (snapshot) => {
-            const canvas = document.getElementById('multiplayer-canvas');
-            
-            // Limpa cursores antigos mantendo a div de Stickmen
-            document.querySelectorAll('.multiplayer-cursor').forEach(c => c.remove());
-            const stickmenContainer = document.getElementById('roomStickmans');
-            stickmenContainer.innerHTML = "";
-
+            roomUsersArea.innerHTML = "";
             if(!snapshot.exists()) return;
-            const roomData = snapshot.val();
-
-            // 1. Renderizar cursores dos outros jogadores na sala
-            if(roomData.cursors) {
-                Object.keys(roomData.cursors).forEach(uid => {
-                    if(uid === currentUser.uid) return; // Não desenha seu próprio cursor
-                    const mouse = roomData.cursors[uid];
-                    
-                    const cursorImg = document.createElement('img');
-                    cursorImg.className = "multiplayer-cursor";
-                    cursorImg.src = "image_0fd01b.png"; // Cursor customizado
-                    cursorImg.style.left = `${mouse.x}%`;
-                    cursorImg.style.top = `${mouse.y}%`;
-
-                    canvas.appendChild(cursorImg);
-                });
-            }
-        });
-
-        // Loop de redundância local: Atualiza os Stickmen ativos direto do Sandbox de Área de Trabalho
-        fallbackRoomInterval = setInterval(async () => {
-            const entitiesSnap = await get(ref(db, 'entities'));
-            const stickmenContainer = document.getElementById('roomStickmans');
-            stickmenContainer.innerHTML = "";
             
-            if(entitiesSnap.exists()) {
-                entitiesSnap.forEach(snap => {
-                    const stick = snap.val();
-                    const stickEl = document.createElement('div');
-                    stickEl.style.position = "absolute";
-                    stickEl.style.left = `${Math.random() * 80 + 5}%`;
-                    stickEl.style.top = `${Math.random() * 70 + 10}%`;
-                    stickEl.style.textAlign = "center";
-                    
-                    const img = document.createElement('img');
-                    img.src = stick.image_b64 ? `data:image/png;base64,${stick.image_b64}` : 'image_104ff9.png';
-                    img.style.width = "75px";
-                    img.style.height = "75px";
-                    img.style.objectFit = "contain";
-
-                    const nameLbl = document.createElement('p');
-                    nameLbl.innerText = stick.name;
-                    nameLbl.style.margin = "2px 0 0 0";
-                    nameLbl.style.fontSize = "11px";
-                    nameLbl.style.color = "#00ff66";
-                    nameLbl.style.background = "rgba(0,0,0,0.7)";
-
-                    stickEl.appendChild(img);
-                    stickEl.appendChild(nameLbl);
-                    stickmenContainer.appendChild(stickEl);
-                });
-            }
-        }, 3000);
+            snapshot.forEach(childSnap => {
+                const u = childSnap.val();
+                if(childSnap.key !== currentUser.uid && (Date.now() - u.lastSeen < 6000)) {
+                    const cursor = document.createElement('div');
+                    cursor.className = "multiplayer-cursor";
+                    cursor.style.left = `${u.x}%`;
+                    cursor.style.top = `${u.y}%`;
+                    cursor.innerText = `👤 ${u.name}`;
+                    roomUsersArea.appendChild(cursor);
+                }
+            });
+        });
     }
 
-    // Sair da Sala e desligar rastreamento
+    // SAIR DO MODO FAKE PC
     document.getElementById('btnSairSala').addEventListener('click', () => {
-        if(currentRoomRef && currentUser) {
-            set(child(currentRoomRef, `cursors/${currentUser.uid}`), null);
-        }
-        clearInterval(fallbackRoomInterval);
-        document.getElementById('fake-pc-room').removeEventListener('mousemove', enviarPosicaoMouse);
+        if(userMouseRef) remove(userMouseRef);
         document.getElementById('fake-pc-room').style.display = "none";
+        document.getElementById('multiplayer-canvas').onmousemove = null;
+        userMouseRef = null;
         currentRoomRef = null;
     });
 </script>
