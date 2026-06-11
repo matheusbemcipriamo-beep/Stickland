@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stickland - Matrix HUD</title>
+    <title>-Stickland-</title>
     <style>
         /* Estilo Retro / Newgrounds / Hacker */
         body {
@@ -33,7 +33,7 @@
             text-transform: uppercase;
         }
         .status-bar {
-            color: #00ff66;
+            color: #ff3333;
             font-weight: bold;
             text-align: center;
             margin-bottom: 20px;
@@ -42,8 +42,9 @@
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+            justify-content: center;
         }
-        input[type="text"], input[type="email"] {
+        input[type="text"] {
             flex: 1;
             padding: 10px;
             background: #111;
@@ -62,6 +63,21 @@
         }
         button:hover { background: #ffcc00; }
         
+        .google-btn {
+            background: #df4a32;
+            color: white;
+            font-size: 14px;
+            border: none;
+            padding: 12px 24px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-transform: uppercase;
+        }
+        .google-btn:hover { background: #ff5c42; }
+
         /* Perfil da Entidade */
         .profile { display: none; }
         .profile-header {
@@ -105,13 +121,15 @@
         <p>Acesso obrigatório para estabilização de memórias.</p>
     </div>
 
-    <div class="search-box">
-        <input type="email" id="userEmail" placeholder="Seu E-mail de Desenvolvedor...">
-        <button id="btnConectar" onclick="conectarStickland()">Conectar</button>
+    <div class="search-box" id="authArea">
+        <button class="google-btn" id="btnGoogle" onclick="loginComGoogle()">
+            <svg style="width:18px; height:18px" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35,11.1H12V12.9H19.6C19.2,15 17.5,16.8 15.3,17.5V19.3H19.7C22.3,16.9 23.8,13.3 23.8,9.1C23.8,8.5 23.7,7.9 23.5,7.3H12V9.1H19.7C19.6,9.8 19.3,10.5 18.9,11.1H21.35M12,18C9.3,18 7,16.2 6.1,13.7H1.6V15.5C3.4,19.1 7.1,21.5 11.5,21.5C14.3,21.5 16.9,20.5 18.8,18.8L15.3,16.1C14.2,16.9 12.9,17.4 11.5,17.4C8.9,17.4 6.7,15.7 5.9,13.3H1.4V15.1C2.9,18 5.9,20 9.5,20C10.3,20 11.2,19.9 12,19.7V18M2.2,10.7C2,10.1 1.9,9.5 1.9,8.9C1.9,8.3 2,7.7 2.2,7.1V5.3H0.3C0.1,5.9 0,6.5 0,7.1C0,7.8 0.1,8.4 0.3,9H2.2V10.7M11.5,3.5C13.1,3.5 14.5,4.1 15.6,5.1L18.4,2.3C16.6,0.9 14.3,0 11.5,0C7.1,0 3.4,2.4 1.6,6C1.6,6 1.6,6.1 1.6,6.1L4.1,8.1C4.9,5.5 7.4,3.5 10.5,3.5C10.8,3.5 11.2,3.5 11.5,3.5Z"/></svg>
+            Entrar com a Conta Google
+        </button>
     </div>
 
     <div class="status-bar" id="connectionStatus">
-        [!] CONEXÃO NEURAL: INATIVA - INSIRA E-MAIL PARA INICIAR
+        [!] CONEXÃO NEURAL: INATIVA - REQUISITA AUTENTICAÇÃO DO GOOGLE
     </div>
 
     <div class="search-box" id="searchArea" style="display:none;">
@@ -135,33 +153,48 @@
     </div>
 </div>
 
-<script>
-    // ==========================================
-    // COLOQUE A URL DO SEU FIREBASE AQUI EMBAIXO
-    // ==========================================
-    const FIREBASE_URL = "https://SEU-PROJETO-AQUI-default-rtdb.firebaseio.com";
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+
+    // TODO: COLOQUE AS CREDENCIAIS DO SEU PROJETO DO FIREBASE AQUI!
+    const firebaseConfig = {
+        apiKey: "SUA_API_KEY_AQUI",
+        authDomain: "SEU-PROJETO-AQUI.firebaseapp.com",
+        databaseURL: "https://SEU-PROJETO-AQUI-default-rtdb.firebaseio.com",
+        projectId: "SEU-PROJETO-AQUI",
+        storageBucket: "SEU-PROJETO-AQUI.appspot.com",
+        messagingSenderId: "SEU_SENDER_ID",
+        appId: "SEU_APP_ID"
+    };
+
+    const FIREBASE_URL = firebaseConfig.databaseURL;
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
     let isConnected = false;
 
-    // Nova função de login que resolve o bug do "@"
-    function conectarStickland() {
-        const emailInput = document.getElementById('userEmail');
-        const valorEmail = emailInput.value;
-
-        // Checa se o email tem @ e pelo menos alguma coisa depois dele
-        if(valorEmail.includes('@') && valorEmail.length > 3) {
-            isConnected = true;
-            document.getElementById('connectionStatus').innerText = "[+] CONEXÃO NEURAL DE STICKLAND: ESTÁVEL E ATIVA";
-            document.getElementById('searchArea').style.display = "flex";
-            
-            // Trava o campo e esconde o botão de conectar
-            emailInput.disabled = true;
-            document.getElementById('btnConectar').style.display = 'none';
-        } else {
-            alert("Bro, digite um e-mail válido com o '@' para acessar a Stickland!");
-        }
+    // Vincula a função de login no escopo global para o clique do botão funcionar
+    window.loginComGoogle = function() {
+        signInWithPopup(auth, provider)
+            .then((result) => {
+                isConnected = true;
+                
+                const statusElement = document.getElementById('connectionStatus');
+                statusElement.innerText = `[+] CONEXÃO NEURAL DE STICKLAND: ESTÁVEL E ATIVA (${result.user.displayName})`;
+                statusElement.style.color = "#00ff66";
+                
+                document.getElementById('searchArea').style.display = "flex";
+                document.getElementById('authArea').style.display = 'none';
+            })
+            .catch((error) => {
+                console.error("Erro ao autenticar:", error);
+                alert("Erro ao conectar com sua conta Google!");
+            });
     }
 
-    // O "Heartbeat" (Batimento Cardíaco): Avisa o Python que a Stickland tá aberta
+    // Heartbeat contínuo alertando o script Python
     setInterval(() => {
         if (isConnected) {
             fetch(`${FIREBASE_URL}/server_status.json`, {
@@ -172,8 +205,8 @@
         }
     }, 5000); 
 
-    // Função para puxar os dados do Stickman
-    async function buscarMemoria() {
+    // Busca as memórias e dados físicos do Stickman do Realtime Database
+    window.buscarMemoria = async function() {
         const nome = document.getElementById('stickmanName').value.trim();
         if (!nome) return;
 
@@ -217,6 +250,5 @@
         }
     }
 </script>
-
 </body>
 </html>
