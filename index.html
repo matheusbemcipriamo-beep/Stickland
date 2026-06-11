@@ -232,6 +232,50 @@
             border: 1px dashed #555;
             max-width: 400px;
         }
+
+        /* --- NOVOS ESTILOS: MULTIPLAYER E PC FAKE --- */
+        .friend-card {
+            background: #151515;
+            border: 1px solid #444;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        #fake-pc-room {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            /* Usando o seu fundo antigo */
+            background: url('image_0fd018.jpg') no-repeat center center;
+            background-size: cover;
+            z-index: 9999;
+            overflow: hidden;
+        }
+
+        .pc-topbar {
+            background: rgba(0, 0, 0, 0.8);
+            border-bottom: 2px solid #ff9900;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            color: #ffcc00;
+            font-weight: bold;
+        }
+
+        .multiplayer-cursor {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            pointer-events: none; /* Para não atrapalhar os cliques do usuário real */
+            z-index: 10000;
+            transition: left 0.1s linear, top 0.1s linear; /* Movimento suave */
+        }
     </style>
 </head>
 <body>
@@ -256,6 +300,7 @@
     <div class="nav-tabs" id="mainNav">
         <button class="tab-btn active" data-tab="hud">Matrix HUD</button>
         <button class="tab-btn" data-tab="feed">Feed Global</button>
+        <button class="tab-btn" data-tab="multiplayer">Co-op & Amigos</button>
         <button class="tab-btn" data-tab="grupos">Clãs da Cidade</button>
         <button class="tab-btn" data-tab="chat">Chat Online</button>
         <button class="tab-btn" data-tab="perfil">Meu Perfil</button>
@@ -268,7 +313,6 @@
             <input type="text" id="stickmanName" placeholder="Digite o nome ou ID do Stickman para descriptografar...">
             <button id="btnBuscar">Extrair Dados Nucleares</button>
         </div>
-
         <div id="profilePanel" style="display:none;">
             <div class="profile-header">
                 <img id="stickAvatar" class="avatar-img" src="" alt="Avatar">
@@ -286,26 +330,50 @@
                     </div>
                 </div>
             </div>
-
             <div class="matrix-sections">
                 <div class="data-block">
                     <h4>[ Perfil Psicológico & Memória Dinâmica ]</h4>
                     <div class="memory-log" id="blockCoreData"></div>
                 </div>
-
                 <div class="data-block">
                     <h4>[ Histórico de Interações por Voz (Conversas) ]</h4>
                     <div class="memory-log" id="blockConversations"></div>
                 </div>
-
                 <div class="data-block">
                     <h4>[ Conexões Sociais: Amigos & Inimigos ]</h4>
                     <div class="memory-log" id="blockSocialNet"></div>
                 </div>
-
                 <div class="data-block">
                     <h4>[ Atividades de Defesa/Ataque na Cidade ]</h4>
                     <div class="memory-log" id="blockCombatLog"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-multiplayer" class="tab-content">
+        <h3 style="color: #ff9900; margin-top:0;">[ REDE DE OPERADORES & SALAS CO-OP ]</h3>
+        
+        <div class="data-block" style="margin-bottom: 20px;">
+            <h4>Pesquisar Operadores (Adicionar Amigos)</h4>
+            <div class="search-box" style="margin-bottom: 0;">
+                <input type="text" id="searchUserStr" placeholder="Nome do perfil do amigo...">
+                <button id="btnSearchUser">Procurar</button>
+            </div>
+            <div id="userSearchResults" style="margin-top: 10px;"></div>
+        </div>
+
+        <div class="matrix-sections" style="grid-template-columns: 1fr 1fr;">
+            <div class="data-block">
+                <h4>Seus Amigos Conectados</h4>
+                <div id="friendsListContainer">
+                    <p style="color:#666; font-size:12px;">Nenhum amigo adicionado ainda.</p>
+                </div>
+            </div>
+            <div class="data-block">
+                <h4>Solicitações Pendentes</h4>
+                <div id="friendRequestsContainer">
+                    <p style="color:#666; font-size:12px;">Nenhuma solicitação.</p>
                 </div>
             </div>
         </div>
@@ -320,9 +388,7 @@
                 <button id="btnPostar" style="height:fit-content; align-self:center;">Publicar</button>
             </div>
         </div>
-        <div id="feedContainer">
-            <p style="color:#666;">Carregando updates da Matrix...</p>
-        </div>
+        <div id="feedContainer"><p style="color:#666;">Carregando updates da Matrix...</p></div>
     </div>
 
     <div id="tab-grupos" class="tab-content">
@@ -360,7 +426,6 @@
         <div class="edit-profile">
             <label style="font-size:12px; display:block; margin-bottom:5px;">Apelido de Rede:</label>
             <input type="text" id="profileName" style="margin-bottom:15px; width:-webkit-fill-available;"><br>
-            
             <label style="font-size:12px; display:block; margin-bottom:5px;">Cor do seu Codinome:</label>
             <select id="profileColor" style="margin-bottom:20px; width:100%; background:#0a0a0a; color:#fff; padding:10px; border:1px solid #444;">
                 <option value="#00ffff" style="color:#00ffff;">Ciano Hacker</option>
@@ -368,288 +433,18 @@
                 <option value="#ff00ff" style="color:#ff00ff;">Neon Magenta</option>
                 <option value="#00ff66" style="color:#00ff66;">Verde Ácido</option>
             </select>
-            
             <button id="btnSalvarPerfil">Gravar Alterações</button>
         </div>
     </div>
 </div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-    import { getDatabase, ref, set, push, onValue, get, child } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
-
-    // Credenciais do Firebase
-    const firebaseConfig = {
-        apiKey: "AIzaSyA2hBfWW0bTd-N9ky95AJEweP6SyNMogyY",
-        authDomain: "stickland-3ccaa.firebaseapp.com",
-        databaseURL: "https://stickland-3ccaa-default-rtdb.firebaseio.com",
-        projectId: "stickland-3ccaa",
-        storageBucket: "stickland-3ccaa.appspot.com",
-        messagingSenderId: "285348004391",
-        appId: "1:285348004391:web:0c00837f0f387961da0402"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
-    const provider = new GoogleAuthProvider();
-
-    let userSession = {
-        uid: "",
-        displayName: "Operador Anonimo",
-        customName: "",
-        color: "#00ffff"
-    };
-
-    // CORREÇÃO CRÍTICA: Mecanismo de abas compatível com módulos JavaScript
-    function switchTab(tabName, targetButton) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        
-        const targetContent = document.getElementById(`tab-${tabName}`);
-        if(targetContent) targetContent.classList.add('active');
-        if(targetButton) targetButton.classList.add('active');
-    }
-
-    // Atribui o clique de mudar abas via código, removendo a necessidade do 'onclick' antigo
-    document.querySelectorAll('.tab-btn').forEach(button => {
-        button.addEventListener('click', (e) => {
-            const tabName = e.currentTarget.getAttribute('data-tab');
-            switchTab(tabName, e.currentTarget);
-        });
-    });
-
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            userSession.uid = user.uid;
-            userSession.displayName = user.displayName;
-            
-            const statusElement = document.getElementById('connectionStatus');
-            statusElement.innerText = `[+] TERMINAL AUTENTICADO: OPERANDO COMO ${user.displayName.toUpperCase()}`;
-            statusElement.style.color = "#00ff66";
-            
-            document.getElementById('mainNav').style.display = "flex";
-            document.getElementById('authArea').style.display = "none";
-            
-            const snapshot = await get(ref(db, `users/${userSession.uid}`));
-            if (snapshot.exists()) {
-                const data = snapshot.val();
-                userSession.customName = data.customName || "";
-                userSession.color = data.color || "#00ffff";
-            }
-            
-            document.getElementById('profileName').value = userSession.customName || userSession.displayName;
-            document.getElementById('profileColor').value = userSession.color;
-            startRealtimeListeners();
-        } else {
-            document.getElementById('mainNav').style.display = "none";
-            document.getElementById('authArea').style.display = "block";
-            
-            const statusElement = document.getElementById('connectionStatus');
-            statusElement.innerText = "[!] CONEXÃO NEURAL: INATIVA - REQUISITA DECODIFICAÇÃO DE CONTA";
-            statusElement.style.color = "#ff3333";
-        }
-    });
-
-    document.getElementById('btnGoogle').addEventListener('click', () => {
-        signInWithPopup(auth, provider).catch(() => alert("Falha de autenticação com o Google."));
-    });
-
-    function startRealtimeListeners() {
-        onValue(ref(db, 'feed_posts'), (snapshot) => {
-            const feedContainer = document.getElementById('feedContainer');
-            feedContainer.innerHTML = "";
-            if(snapshot.exists()) {
-                const posts = [];
-                snapshot.forEach(childSnap => { posts.unshift({ id: childSnap.key, ...childSnap.val() }); });
-                posts.forEach(post => {
-                    feedContainer.innerHTML += `
-                        <div class="post-card">
-                            <div class="post-meta">Enviado por <span class="post-author" style="color:${post.color || '#ff9900'}">${post.author}</span> em ${post.date}</div>
-                            <div class="post-body">${post.text}</div>
-                        </div>
-                    `;
-                });
-            } else {
-                feedContainer.innerHTML = "<p style='color:#666;'>Nenhuma atividade registrada na timeline.</p>";
-            }
-        });
-
-        onValue(ref(db, 'global_chat'), (snapshot) => {
-            const chatWindow = document.getElementById('chatWindow');
-            chatWindow.innerHTML = "";
-            if(snapshot.exists()) {
-                snapshot.forEach(childSnap => {
-                    const msg = childSnap.val();
-                    chatWindow.innerHTML += `
-                        <div class="chat-msg">
-                            <span class="chat-time">[${msg.time}]</span> 
-                            <span style="color:${msg.color || '#fff'}; font-weight:bold;">${msg.sender}:</span> ${msg.text}
-                        </div>
-                    `;
-                });
-                chatWindow.scrollTop = chatWindow.scrollHeight;
-            }
-        });
-        
-        setInterval(() => {
-            set(ref(db, 'server_status'), { is_online: true, last_ping: Date.now() }).catch(() => {});
-        }, 5000);
-    }
-
-    document.getElementById('btnPostar').addEventListener('click', () => {
-        const text = document.getElementById('postText').value.trim();
-        if(!text) return;
-        push(ref(db, 'feed_posts'), {
-            author: userSession.customName || userSession.displayName,
-            text: text,
-            color: userSession.color,
-            date: new Date().toLocaleTimeString() + " " + new Date().toLocaleDateString()
-        }).then(() => { document.getElementById('postText').value = ""; });
-    });
-
-    document.getElementById('btnEnviarChat').addEventListener('click', () => {
-        const msgInput = document.getElementById('chatMessage');
-        const text = msgInput.value.trim();
-        if(!text) return;
-        push(ref(db, 'global_chat'), {
-            sender: userSession.customName || userSession.displayName,
-            text: text,
-            color: userSession.color,
-            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-        }).then(() => { msgInput.value = ""; });
-    });
-
-    document.getElementById('btnSalvarPerfil').addEventListener('click', () => {
-        const customName = document.getElementById('profileName').value.trim();
-        const color = document.getElementById('profileColor').value;
-        if(!customName) return alert("Seu apelido não pode ficar em branco!");
-        set(ref(db, `users/${userSession.uid}`), { customName: customName, color: color })
-            .then(() => { alert("Perfil sincronizado com sucesso!"); });
-    });
-
-    document.getElementById('btnBuscar').addEventListener('click', async () => {
-        const nomeDigitado = document.getElementById('stickmanName').value.trim();
-        if (!nomeDigitado) return;
-
-        try {
-            let resposta = await get(ref(db, `stickmans/${nomeDigitado}`));
-            let dados = null;
-            let nomeFinal = nomeDigitado;
-
-            if (resposta.exists()) {
-                dados = resposta.val();
-            } else {
-                const todosStickmansSnap = await get(ref(db, 'stickmans'));
-                if (todosStickmansSnap.exists()) {
-                    todosStickmansSnap.forEach(childSnap => {
-                        const sData = childSnap.val();
-                        let nomesParaChecar = [childSnap.key.toLowerCase()];
-                        if (sData.id) nomesParaChecar.push(String(sData.id).toLowerCase());
-                        if (sData.historico_nomes) nomesParaChecar = nomesParaChecar.concat(sData.historico_nomes.map(n => n.toLowerCase()));
-                        if (sData.nomes_passados) nomesParaChecar = nomesParaChecar.concat(sData.nomes_passados.map(n => n.toLowerCase()));
-
-                        if (nomesParaChecar.includes(nomeDigitado.toLowerCase())) {
-                            dados = sData;
-                            nomeFinal = childSnap.key; 
-                        }
-                    });
-                }
-            }
-
-            if (dados) {
-                document.getElementById('profilePanel').style.display = "block";
-                document.getElementById('stickName').innerText = nomeFinal.toUpperCase();
-                document.getElementById('stickUID').innerText = dados.id || "Desconhecido";
-                document.getElementById('stickDate').innerText = dados.creation_date || dados.criacao || "Não Registrada";
-                document.getElementById('stickDeaths').innerText = dados.mortes !== undefined ? dados.mortes : "0";
-                document.getElementById('stickVisits').innerText = dados.visitas_stickland !== undefined ? dados.visitas_stickland : "1";
-                
-                const facElem = document.getElementById('stickFaction');
-                const fac = dados.alinhamento ? dados.alinhamento.toLowerCase() : "cidadao";
-                if(fac === "heroi") {
-                    facElem.innerText = "HERÓI DA CIDADE"; facElem.className = "faction-hero";
-                } else if(fac === "vilao") {
-                    facElem.innerText = "VILÃO ATACANTE"; facElem.className = "faction-villain";
-                } else {
-                    facElem.innerText = "CIDADÃO COMUM"; facElem.className = "faction-citizen";
-                }
-
-                let arrayNomes = [];
-                if(dados.historico_nomes) arrayNomes = arrayNomes.concat(dados.historico_nomes);
-                if(dados.nomes_passados) arrayNomes = arrayNomes.concat(dados.nomes_passados);
-                arrayNomes = [...new Set(arrayNomes)].filter(n => n.toLowerCase() !== nomeFinal.toLowerCase());
-                if (arrayNomes.length > 0) {
-                    document.getElementById('stickHistoryRow').style.display = "block";
-                    document.getElementById('stickHistory').innerText = arrayNomes.join(", ");
-                } else {
-                    document.getElementById('stickHistoryRow').style.display = "none";
-                }
-                
-                if(dados.image_b64 || dados.avatar_b64) {
-                    document.getElementById('stickAvatar').src = `data:image/png;base64,${dados.image_b64 || dados.avatar_b64}`;
-                } else {
-                    document.getElementById('stickAvatar').src = ""; 
-                }
-
-                const bCore = document.getElementById('blockCoreData');
-                const bConversations = document.getElementById('blockConversations');
-                const bSocial = document.getElementById('blockSocialNet');
-                const bCombat = document.getElementById('blockCombatLog');
-                
-                bCore.innerHTML = ""; bConversations.innerHTML = ""; bSocial.innerHTML = ""; bCombat.innerHTML = "";
-
-                if(dados.pensamentos_importantes) {
-                    bCore.innerHTML += `<div class="log-entry"><span class="log-meta">[PENSAMENTO CENTRAL]:</span> ${dados.pensamentos_importantes}</div>`;
-                }
-                if(dados.traumas) {
-                    let t = Array.isArray(dados.traumas) ? dados.traumas.join(", ") : dados.traumas;
-                    bCore.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff3333;">[TRAUMAS ATIVOS]:</span> ${t}</div>`;
-                }
-                if(bCore.innerHTML === "") bCore.innerHTML = "<p style='color:#555;'>Mente sem diretrizes anômalas estritas.</p>";
-
-                if(dados.memory && dados.memory.length > 0) {
-                    dados.memory.forEach(c => {
-                        bConversations.innerHTML += `
-                            <div class="log-entry">
-                                <span class="log-user">Usuário:</span> ${c.user}<br>
-                                <span class="log-ai">${nomeFinal}:</span> ${c.ai}
-                            </div>`;
-                    });
-                } else {
-                    bConversations.innerHTML = "<p style='color:#555;'>Nenhum comando de voz gravado na memória de curto prazo.</p>";
-                }
-
-                let amg = dados.amigos ? (Array.isArray(dados.amigos) ? dados.amigos.join(", ") : dados.amigos) : "Nenhum amigo registrado";
-                let inim = dados.inimigos ? (Array.isArray(dados.inimigos) ? dados.inimigos.join(", ") : dados.inimigos) : "Nenhum rival declarado";
-                bSocial.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#00ff66;">[AMIGOS]:</span> ${amg}</div>`;
-                bSocial.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff3333;">[INIMIGOS]:</span> ${inim}</div>`;
-                if(dados.usuarios_odiados) {
-                    bSocial.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff00ff;">[HUMANOS ODIADOS]:</span> ${dados.usuarios_odiados}</div>`;
-                }
-
-                if(dados.historico_combates && dados.historico_combates.length > 0) {
-                    dados.historico_combates.forEach(combate => {
-                        bCombat.innerHTML += `<div class="log-entry" style="color:#ffcc00;">[BATALHA]: ${combate}</div>`;
-                    });
-                } else {
-                    if(fac === "vilao") {
-                        bCombat.innerHTML = "<div class='log-entry' style='color:#ff3333;'>[ALERTA]: Registros indicam vandalismo nas fronteiras da Stickland!</div>";
-                    } else if(fac === "heroi") {
-                        bCombat.innerHTML = "<div class='log-entry' style='color:#00ff66;'>[PATRULHA]: Entidade detectada protegendo civis e interceptando ameaças.</div>";
-                    } else {
-                        bCombat.innerHTML = "<p style='color:#555;'>Nenhum combate violento recente registrado na central.</p>";
-                    }
-                }
-
-            } else {
-                alert("Entidade não localizada nos servidores Stickland. Injete-a primeiro pelo Paint Studio!");
-            }
-        } catch (error) {
-            alert("Erro crítico ao descriptografar dados da Matrix.");
-        }
-    });
-</script>
-</body>
-</html>
+<div id="fake-pc-room">
+    <div class="pc-topbar">
+        <span id="roomTitle">[SALA] Desktop de Ninguém</span>
+        <button id="btnSairSala" style="padding: 5px 10px; font-size: 11px; background: #ff3333; color: white;">Desconectar</button>
+    </div>
+    
+    <div id="multiplayer-canvas" style="position: relative; width: 100%; height: calc(100vh - 40px);">
+        <div id="roomStickmans"></div>
+    </div>
+</div>
