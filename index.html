@@ -591,11 +591,11 @@
 
             // Alinhamento de Facção
             const factionLabel = document.getElementById('stickFaction');
-            const fac = (foundData.alinhamento || "").toLowerCase();
-            if (fac === "heroi" || fac === "pacífico") {
+            const fac = (foundData.alignment || foundData.alinhamento || "").toLowerCase();
+            if (fac === "heroi" || fac === "pacífico" || fac === "pacifico") {
                 factionLabel.innerText   = "Protetor do Distrito";
                 factionLabel.className   = "faction-hero";
-            } else if (fac === "vilao" || fac === "destrutor" || fac === "hostil") {
+            } else if (fac === "vilao" || fac === "destrutor" || fac === "hostil" || fac === "caótico" || fac === "caotico") {
                 factionLabel.innerText   = "Sindicato do Caos";
                 factionLabel.className   = "faction-villain";
             } else {
@@ -630,8 +630,31 @@
                 coreBox.innerHTML += `<div class="log-entry"><span class="log-meta">[PENSAMENTO CENTRAL]:</span> ${foundData.pensamentos_importantes}</div>`;
             }
             if (foundData.traumas) {
-                const t = Array.isArray(foundData.traumas) ? foundData.traumas.join(", ") : JSON.stringify(foundData.traumas);
-                coreBox.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff3333;">[TRAUMAS ATIVOS]:</span> ${t}</div>`;
+                let traumaTexto = "";
+                if (typeof foundData.traumas === "object" && !Array.isArray(foundData.traumas)) {
+                    traumaTexto = Object.entries(foundData.traumas)
+                        .filter(([k, v]) => v > 0)
+                        .map(([k, v]) => `${k}: nível ${v}`)
+                        .join(", ");
+                    if (!traumaTexto) traumaTexto = "Nenhum trauma ativo";
+                } else {
+                    traumaTexto = Array.isArray(foundData.traumas) ? foundData.traumas.join(", ") : JSON.stringify(foundData.traumas);
+                }
+                coreBox.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff3333;">[TRAUMAS ATIVOS]:</span> ${traumaTexto}</div>`;
+            }
+            // Poderes/Skills
+            if (foundData.skills_ativas && foundData.skills_ativas.length > 0) {
+                coreBox.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff00ff;">[PODERES ATIVOS]:</span> ${foundData.skills_ativas.join(", ")}</div>`;
+            } else if (foundData.skills_ativas && foundData.skills_ativas.length === 0) {
+                coreBox.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#555;">[PODERES ATIVOS]:</span> Nenhum poder ativo.</div>`;
+            }
+            // HP máximo
+            if (foundData.max_hp) {
+                coreBox.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#00ff66;">[HP MÁXIMO]:</span> ${foundData.max_hp}</div>`;
+            }
+            // Último assassino
+            if (foundData.ultimo_assassino) {
+                coreBox.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff3333;">[ÚLTIMO A MATAR]:</span> ${foundData.ultimo_assassino}</div>`;
             }
             if (coreBox.innerHTML === "") coreBox.innerHTML = "<p style='color:#555;font-size:11px;'>Mente sem diretrizes anômalas estritas.</p>";
 
@@ -653,8 +676,22 @@
             // Conexões Sociais
             const socialBox = document.getElementById('blockSocialNet');
             socialBox.innerHTML = "";
-            const amg  = foundData.amigos   ? (Array.isArray(foundData.amigos)   ? foundData.amigos.join(", ")   : foundData.amigos)   : "Nenhum amigo registrado";
-            const inim = foundData.inimigos ? (Array.isArray(foundData.inimigos) ? foundData.inimigos.join(", ") : foundData.inimigos) : "Nenhum rival declarado";
+
+            // Lê amigos: pode ser array direto, ou extraído do dict relacoes
+            let amgList = [];
+            let inimList = [];
+            if (Array.isArray(foundData.amigos) && foundData.amigos.length > 0) {
+                amgList = foundData.amigos;
+            } else if (foundData.relacoes && typeof foundData.relacoes === 'object') {
+                amgList  = Object.entries(foundData.relacoes).filter(([k,v]) => v === "amigo").map(([k]) => k);
+                inimList = Object.entries(foundData.relacoes).filter(([k,v]) => v === "rival").map(([k]) => k);
+            }
+            if (Array.isArray(foundData.inimigos) && foundData.inimigos.length > 0) {
+                inimList = foundData.inimigos;
+            }
+
+            const amg  = amgList.length  > 0 ? amgList.join(", ")  : "Nenhum amigo registrado";
+            const inim = inimList.length > 0 ? inimList.join(", ") : "Nenhum rival declarado";
             socialBox.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#00ff66;">[AMIGOS]:</span> ${amg}</div>`;
             socialBox.innerHTML += `<div class="log-entry"><span class="log-meta" style="color:#ff3333;">[INIMIGOS]:</span> ${inim}</div>`;
             if (foundData.usuarios_odiados) {
