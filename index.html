@@ -676,6 +676,12 @@
     </div>
 </div>
 
+<!-- ===== PAINEL DE DEBUG (mostra erros sem precisar de F12) ===== -->
+<!-- Painel oculto: só abre com Ctrl+` e só se for o criador (creator_id === 1) -->
+<div id="debugPanel" style="display:none; position:fixed; bottom:10px; right:10px; width:92vw; max-width:440px; height:320px; background:#000; border:2px solid #ff9900; z-index:99999; overflow-y:auto; padding:10px; font-family:'Courier New', monospace; font-size:11px; color:#0f0;">
+    <div style="color:#ffcc00; font-weight:bold; margin-bottom:6px;">Log da Stickland (mais recentes primeiro)</div>
+</div>
+
 <!-- =====================================================
      ATENÇÃO: Substitua as credenciais abaixo pelas suas
      do Console do Firebase antes de publicar!
@@ -696,7 +702,8 @@
              remove,
              push,
              onValue,
-             onDisconnect }         from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+             onDisconnect,
+             runTransaction }       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
     // ───────────────────────────────────────────────────────────────────────────
 
     // ── CONFIGURAÇÃO DO FIREBASE ───────────────────────────────────────────────
@@ -717,8 +724,53 @@
     const db       = getDatabase(app);
     const provider = new GoogleAuthProvider();
 
-    let currentUser     = null;
-    let currentRoomRef  = null;
+    let currentUser         = null;
+    let currentRoomRef      = null;
+    let currentUserCreatorId = null; // só o creator_id === 1 pode abrir o painel de debug
+
+    // ── PAINEL DE DEBUG NA TELA (Ctrl+` — só libera pro creator_id === 1) ──────
+    function logDebug(msg, type = 'info') {
+        const panel = document.getElementById('debugPanel');
+        if (!panel) return;
+        const color = type === 'error' ? '#ff5555' : type === 'success' ? '#55ff88' : '#66ccff';
+        const line  = document.createElement('div');
+        line.style.borderBottom = '1px solid #222';
+        line.style.padding      = '2px 0';
+        line.style.color        = color;
+        line.textContent        = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        panel.prepend(line);
+        while (panel.children.length > 150) panel.removeChild(panel.lastChild);
+    }
+
+    // Captura tudo que passar por console.error e joga no painel também
+    const _origConsoleError = console.error.bind(console);
+    console.error = (...args) => {
+        _origConsoleError(...args);
+        try {
+            logDebug(args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' '), 'error');
+        } catch (_) { /* ignora falha do próprio logger */ }
+    };
+
+    // Captura erros de JS não tratados e promises rejeitadas
+    window.addEventListener('error', (e) => {
+        logDebug(`Erro JS: ${e.message} (linha ${e.lineno})`, 'error');
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+        logDebug(`Promise rejeitada: ${e.reason}`, 'error');
+    });
+
+    // Atalho: Ctrl + ` (crase) — só abre se currentUserCreatorId === 1
+    window.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && (e.key === '`' || e.key === '~' || e.code === 'Backquote')) {
+            e.preventDefault();
+            if (currentUserCreatorId === 1) {
+                const panel = document.getElementById('debugPanel');
+                panel.style.display = (panel.style.display === 'none') ? 'block' : 'none';
+                if (panel.style.display === 'block') logDebug('Painel de debug aberto (criador #1).', 'success');
+            }
+            // se não for o criador #1, o atalho simplesmente não faz nada (sem feedback nenhum)
+        }
+    });
 
     // ── SINALIZA PARA OS APPS DESKTOP QUE O SITE ESTÁ ABERTO ───────────────────
     const onlineStatusRef = ref(db, 'server_status/is_online');
@@ -760,13 +812,31 @@
                 // Registrar ou verificar perfil na Matrix
                 const userRef  = ref(db, `users/${user.uid}`);
                 const snapshot = await get(userRef);
+
                 if (!snapshot.exists()) {
-                    await set(userRef, {
-                        name:  user.displayName,
-                        color: "#00ffff",
-                        uid:   user.uid,
-                        email: user.email
+                    // Usuário novo: gera um creator_id sequencial (o primeiro a logar vira #1)
+                    let assignedId = null;
+                    await runTransaction(ref(db, 'meta/next_creator_id'), (current) => {
+                        if (current === null || current === undefined) {
+                            assignedId = 1;
+                            return 2;
+                        }
+                        assignedId = current;
+                        return current + 1;
                     });
+
+                    await set(userRef, {
+                        name:       user.displayName,
+                        color:      "#00ffff",
+                        uid:        user.uid,
+                        email:      user.email,
+                        creator_id: assignedId
+                    });
+
+                    currentUserCreatorId = assignedId;
+                } else {
+                    // Usuário já existente: usa o creator_id que já tem salvo (se ainda não tiver, fica null)
+                    currentUserCreatorId = snapshot.val().creator_id ?? null;
                 }
 
                 // Preencher campo de apelido com o nome atual
