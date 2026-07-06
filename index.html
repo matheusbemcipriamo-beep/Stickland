@@ -273,6 +273,191 @@
             z-index: 10000;
             white-space: nowrap;
         }
+
+        /* --- NOVOS ESTILOS: CIDADE (STICKLAND CITY / CLUB-PENGUIM STYLE) --- */
+        .city-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 15px;
+            background: #111;
+            border: 1px solid #333;
+            padding: 10px;
+        }
+        .city-controls select { flex: none; width: auto; min-width: 180px; }
+        .city-controls .city-level-tag {
+            color: #ffcc00;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: auto;
+        }
+
+        .city-map-wrapper {
+            position: relative;
+            width: 100%;
+            height: 460px;
+            overflow: auto;
+            border: 2px solid #ff9900;
+            background: linear-gradient(#1c2b1c 0%, #16321c 40%, #223322 100%);
+        }
+        .city-map {
+            position: relative;
+            min-width: 100%;
+            min-height: 100%;
+            background-image:
+                repeating-linear-gradient(0deg, transparent, transparent 39px, #ffffff08 40px),
+                repeating-linear-gradient(90deg, transparent, transparent 39px, #ffffff08 40px);
+        }
+        .city-road-h {
+            position: absolute;
+            left: 0; right: 0;
+            height: 26px;
+            background: #2b2b2b;
+            border-top: 2px dashed #555;
+            border-bottom: 2px dashed #555;
+        }
+        .city-road-v {
+            position: absolute;
+            top: 0; bottom: 0;
+            width: 26px;
+            background: #2b2b2b;
+            border-left: 2px dashed #555;
+            border-right: 2px dashed #555;
+        }
+
+        .house {
+            position: absolute;
+            width: 96px;
+            text-align: center;
+            cursor: pointer;
+            transition: filter 0.15s;
+            user-select: none;
+        }
+        .house:hover { filter: brightness(1.3); }
+        .house-roof {
+            width: 0; height: 0;
+            margin: 0 auto;
+            border-left: 48px solid transparent;
+            border-right: 48px solid transparent;
+            border-bottom: 30px solid #ff9900;
+        }
+        .house-roof.hero    { border-bottom-color: #00ff66; }
+        .house-roof.villain { border-bottom-color: #ff3333; }
+        .house-roof.citizen { border-bottom-color: #ffcc00; }
+        .house-body {
+            background: #1a1a1a;
+            border: 2px solid #444;
+            border-top: none;
+            height: 54px;
+            position: relative;
+        }
+        .house-door {
+            position: absolute;
+            bottom: 0; left: 50%;
+            transform: translateX(-50%);
+            width: 20px; height: 28px;
+            border-radius: 4px 4px 0 0;
+        }
+        .house-window {
+            position: absolute;
+            top: 8px; width: 14px; height: 14px;
+            background: #00ffff88;
+            border: 1px solid #00ffffcc;
+        }
+        .house-name {
+            font-size: 10px;
+            color: #fff;
+            background: #000000cc;
+            padding: 2px 4px;
+            margin-top: 3px;
+            border: 1px solid #555;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stick-citizen {
+            position: absolute;
+            width: 22px;
+            height: 40px;
+            transition: left 3.5s linear, top 3.5s linear;
+            cursor: pointer;
+            z-index: 5;
+        }
+        .stick-citizen svg { width: 100%; height: 100%; overflow: visible; }
+        .stick-citizen .citizen-tag {
+            position: absolute;
+            top: -16px; left: 50%;
+            transform: translateX(-50%);
+            font-size: 9px;
+            white-space: nowrap;
+            background: #000;
+            padding: 1px 3px;
+            border: 1px solid #333;
+        }
+
+        .city-empty-msg {
+            color: #666;
+            text-align: center;
+            padding-top: 180px;
+            font-size: 13px;
+        }
+
+        .city-feed {
+            margin-top: 12px;
+            background: #000;
+            border: 1px solid #333;
+            height: 110px;
+            overflow-y: auto;
+            padding: 8px;
+            font-size: 12px;
+        }
+        .city-feed .log-entry { border-bottom: 1px solid #1a1a1a; padding-bottom: 3px; margin-bottom: 5px; }
+
+        .city-modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #000000cc;
+            z-index: 9500;
+            align-items: center;
+            justify-content: center;
+        }
+        .city-modal-box {
+            background: #151515;
+            border: 2px solid #ff9900;
+            max-width: 420px;
+            width: 90%;
+            padding: 18px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .city-modal-box h3 { margin-top: 0; color: #ffcc00; }
+        .city-modal-close {
+            float: right;
+            background: #333;
+            padding: 3px 10px;
+            font-size: 11px;
+        }
+
+        .operator-code-box {
+            margin-top: 20px;
+            background: #0a0a0a;
+            border: 1px dashed #00ffff;
+            padding: 12px;
+            max-width: 460px;
+        }
+        .operator-code-box code {
+            color: #00ffff;
+            background: #000;
+            padding: 4px 8px;
+            border: 1px solid #00ffff55;
+            display: inline-block;
+            margin: 6px 0;
+            word-break: break-all;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -298,6 +483,7 @@
         <button class="tab-btn active" data-tab="hud">Matrix HUD</button>
         <button class="tab-btn" data-tab="feed">Feed Global</button>
         <button class="tab-btn" data-tab="multiplayer">Co-op &amp; Amigos</button>
+        <button class="tab-btn" data-tab="cidade">Cidade</button>
         <button class="tab-btn" data-tab="grupos">Clãs da Cidade</button>
         <button class="tab-btn" data-tab="chat">Chat Online</button>
         <button class="tab-btn" data-tab="perfil">Meu Perfil</button>
@@ -388,6 +574,29 @@
         <div id="feedContainer"><p style="color:#666;">Carregando updates da Matrix...</p></div>
     </div>
 
+    <div id="tab-cidade" class="tab-content">
+        <h3 style="color: #ff9900; margin-top:0;">[ STICKLAND CITY — DISTRITO VIRTUAL ]</h3>
+        <p style="font-size:12px; color:#aaa;">Stickmans puxados da área de trabalho (via app desktop) aparecem hospedados aqui, com sua própria casinha. Eles andam, conversam e podem causar (ou impedir) o caos, dependendo da facção.</p>
+
+        <div class="city-controls">
+            <span class="city-level-tag" id="cityLevelTag">Nível da Cidade: 1</span>
+            <select id="citySelector">
+                <option value="__mine__">🏠 Minha Cidade</option>
+            </select>
+            <button id="btnExpandirCidade" style="background:#00ff66;">Expandir Cidade</button>
+            <button id="btnConvidarCidade" style="background:#00ffff; color:#000;">Convidar Amigo p/ Construir</button>
+        </div>
+
+        <div class="city-map-wrapper">
+            <div class="city-map" id="cityMap">
+                <p class="city-empty-msg" id="cityEmptyMsg">Nenhum stickman hospedado ainda. Use o app desktop com o site aberto para enviar um stickman pra cá.</p>
+            </div>
+        </div>
+
+        <h4 style="color:#ff9900; font-size:12px; margin-bottom:4px; margin-top:14px;">[ RÁDIO DA CIDADE ]</h4>
+        <div class="city-feed" id="cityFeed"></div>
+    </div>
+
     <div id="tab-grupos" class="tab-content">
         <h3 style="color: #ff9900; margin-top:0;">[ CLÃS E FACÇÕES DEFENSORAS/INVASORAS ]</h3>
         <div class="group-grid">
@@ -432,6 +641,12 @@
             </select>
             <button id="btnSalvarPerfil">Gravar Alterações</button>
         </div>
+
+        <div class="operator-code-box">
+            <p style="margin:0 0 4px 0; font-size:12px; color:#00ffff;">SEU CÓDIGO DE OPERADOR (cole nos apps desktop para vincular sua cidade):</p>
+            <code id="myOperatorUid">carregando...</code><br>
+            <button id="btnCopyUid" style="font-size:11px; padding:5px 10px;">Copiar Código</button>
+        </div>
     </div>
 </div>
 
@@ -443,6 +658,21 @@
     
     <div id="multiplayer-canvas" style="position: relative; width: 100%; height: calc(100vh - 40px);">
         <div id="roomStickmans"></div>
+    </div>
+</div>
+
+<div id="cityModalBackdrop" class="city-modal-backdrop">
+    <div class="city-modal-box">
+        <button class="city-modal-close" id="btnFecharCityModal">Fechar X</button>
+        <h3 id="cityModalName">NOME</h3>
+        <p style="font-size:12px;">Facção: <span id="cityModalFaction" class="highlight">--</span></p>
+        <p style="font-size:12px;">Arquétipo: <span id="cityModalArquetipo" class="highlight">--</span></p>
+        <p style="font-size:12px;">Mortes registradas: <span id="cityModalMortes" class="highlight">0</span></p>
+        <p style="font-size:12px;">Pontos de Espírito: <span id="cityModalEspirito" class="highlight">--</span></p>
+        <p style="font-size:12px;">Poderes ativos: <span id="cityModalSkills" style="color:#ff00ff;">Nenhum</span></p>
+        <p style="font-size:12px;">Amigos: <span id="cityModalAmigos" style="color:#00ff66;">Nenhum</span></p>
+        <p style="font-size:12px;">Rivais: <span id="cityModalRivais" style="color:#ff3333;">Nenhum</span></p>
+        <p style="font-size:11px; color:#888;">Hospedado desde: <span id="cityModalDesde">--</span></p>
     </div>
 </div>
 
@@ -465,7 +695,8 @@
              update,
              remove,
              push,
-             onValue }              from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+             onValue,
+             onDisconnect }         from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
     // ───────────────────────────────────────────────────────────────────────────
 
     // ── CONFIGURAÇÃO DO FIREBASE ───────────────────────────────────────────────
@@ -489,6 +720,16 @@
 
     let currentUser     = null;
     let currentRoomRef  = null;
+
+    // ── SINALIZA PARA OS APPS DESKTOP QUE O SITE ESTÁ ABERTO ───────────────────
+    // (desktop_sandbox.py / paint_studio.py checam server_status/is_online)
+    const onlineStatusRef = ref(db, 'server_status/is_online');
+    set(onlineStatusRef, true).catch(() => {});
+    try {
+        onDisconnect(onlineStatusRef).set(false);
+    } catch (e) { /* ignora se onDisconnect não estiver disponível */ }
+    window.addEventListener('pagehide', () => { set(onlineStatusRef, false).catch(() => {}); });
+    window.addEventListener('beforeunload', () => { set(onlineStatusRef, false).catch(() => {}); });
 
     // ── SISTEMA DE ABAS ────────────────────────────────────────────────────────
     const tabs     = document.querySelectorAll('.tab-btn');
@@ -533,10 +774,14 @@
             const uData = snapshot.exists() ? snapshot.val() : {};
             document.getElementById('profileName').value = uData.name || user.displayName;
 
+            // Exibe o código de operador (UID) para vincular os apps desktop
+            document.getElementById('myOperatorUid').innerText = user.uid;
+
             // Inicia os sistemas principais
             initChat();
             initFeed();
             initMultiplayerSystem();
+            initCity();
         } else {
             currentUser = null;
             document.getElementById('authArea').style.display = 'block';
@@ -805,6 +1050,13 @@
         }).then(() => alert("Identidade Virtual atualizada na Matrix!"));
     });
 
+    document.getElementById('btnCopyUid').addEventListener('click', () => {
+        const code = document.getElementById('myOperatorUid').innerText;
+        navigator.clipboard.writeText(code).then(() => {
+            alert("Código de Operador copiado! Cole no app desktop (Paint Studio / Desktop Sandbox).");
+        }).catch(() => alert("Não foi possível copiar automaticamente. Copie manualmente: " + code));
+    });
+
     // ── LÓGICA DO SISTEMA MULTIPLAYER (CO-OP & AMIGOS) ───────────────────────
     function initMultiplayerSystem() {
         carregarListaAmigos();
@@ -1029,6 +1281,268 @@
         document.getElementById('fake-pc-room').style.display = "none";
         currentRoomRef = null;
     });
+
+    // ── STICKLAND CITY (ABA CIDADE — ESTILO CLUB PENGUIM) ──────────────────────
+    // Stickmans "entram" aqui quando puxados da área de trabalho pelos apps
+    // desktop (desktop_sandbox.py envia para cities/{uid}/citizens/{id} e
+    // paint_studio.py remove de lá para puxar o stickman de volta pro PC).
+    let cityViewedUid  = null;
+    let cityWalkTimer  = null;
+    let cityChaosTimer = null;
+
+    function fatorFaccao(alignment) {
+        const fac = (alignment || "").toLowerCase();
+        if (fac === "heroi" || fac === "pacífico" || fac === "pacifico") return "hero";
+        if (fac === "vilao" || fac === "destrutor" || fac === "hostil" || fac === "caótico" || fac === "caotico") return "villain";
+        return "citizen";
+    }
+
+    function cityFeedLog(html, color) {
+        const feed = document.getElementById('cityFeed');
+        const entry = document.createElement('div');
+        entry.className = "log-entry";
+        entry.innerHTML = `<span style="color:${color || '#ffcc00'}">[${new Date().toLocaleTimeString()}]</span> ${html}`;
+        feed.prepend(entry);
+        while (feed.children.length > 40) feed.removeChild(feed.lastChild);
+    }
+
+    function pararAnimacoesCidade() {
+        if (cityWalkTimer)  clearInterval(cityWalkTimer);
+        if (cityChaosTimer) clearInterval(cityChaosTimer);
+    }
+
+    function initCity() {
+        popularSeletorCidade();
+        trocarCidadeVisualizada('__mine__');
+        ouvirConvitesDeCidade();
+
+        document.getElementById('citySelector').addEventListener('change', (e) => {
+            trocarCidadeVisualizada(e.target.value);
+        });
+
+        document.getElementById('btnExpandirCidade').addEventListener('click', () => {
+            if (cityViewedUid !== currentUser.uid) {
+                return alert("Você só pode expandir a sua própria cidade. Selecione 'Minha Cidade' primeiro.");
+            }
+            get(ref(db, `cities/${currentUser.uid}/level`)).then(snap => {
+                const nivelAtual = snap.exists() ? snap.val() : 1;
+                update(ref(db, `cities/${currentUser.uid}`), { level: nivelAtual + 1 }).then(() => {
+                    cityFeedLog(`🏗️ Sua cidade cresceu para o <b>nível ${nivelAtual + 1}</b>! Novos terrenos liberados.`, "#00ff66");
+                });
+            });
+        });
+
+        document.getElementById('btnConvidarCidade').addEventListener('click', async () => {
+            const friendsSnap = await get(ref(db, `friends/${currentUser.uid}`));
+            if (!friendsSnap.exists()) return alert("Você precisa ter amigos adicionados (aba Co-op & Amigos) para convidá-los a construir na sua cidade.");
+            const nomes = [];
+            const uids  = [];
+            friendsSnap.forEach(cs => { nomes.push(cs.val().name); uids.push(cs.val().uid); });
+            const escolha = prompt(`Convidar qual amigo para hospedar stickmans na SUA cidade?\n${nomes.map((n,i)=>`${i+1}. ${n}`).join("\n")}\n\nDigite o número:`);
+            const idx = parseInt(escolha, 10) - 1;
+            if (isNaN(idx) || !uids[idx]) return;
+
+            const meuSnap = await get(ref(db, `users/${currentUser.uid}`));
+            const meuNome = meuSnap.exists() ? meuSnap.val().name : currentUser.displayName;
+
+            await set(ref(db, `city_invites/${uids[idx]}`), {
+                fromUid:       currentUser.uid,
+                fromName:      meuNome,
+                cityOwnerUid:  currentUser.uid,
+                cityOwnerName: meuNome,
+                status:        "pending"
+            });
+            alert(`Convite de construção enviado para ${nomes[idx]}! Quando ele(a) aceitar, poderá usar o código de operador da SUA conta no app desktop para hospedar stickmans na sua cidade.`);
+        });
+    }
+
+    function popularSeletorCidade() {
+        const sel = document.getElementById('citySelector');
+        onValue(ref(db, `friends/${currentUser.uid}`), (snapshot) => {
+            [...sel.options].forEach(opt => { if (opt.value !== '__mine__') opt.remove(); });
+            if (!snapshot.exists()) return;
+            snapshot.forEach(cs => {
+                const f   = cs.val();
+                const opt = document.createElement('option');
+                opt.value = f.uid;
+                opt.text  = `🏙️ Cidade de ${f.name}`;
+                sel.appendChild(opt);
+            });
+        });
+    }
+
+    function trocarCidadeVisualizada(uidAlvo) {
+        const uid = uidAlvo === '__mine__' ? currentUser.uid : uidAlvo;
+        cityViewedUid = uid;
+
+        onValue(ref(db, `cities/${uid}/level`), (snap) => {
+            if (cityViewedUid !== uid) return;
+            const nivel = snap.exists() ? snap.val() : 1;
+            document.getElementById('cityLevelTag').innerText = `Nível da Cidade: ${nivel}`;
+            window._cityCurrentLevel = nivel;
+            renderizarCidade();
+        });
+
+        onValue(ref(db, `cities/${uid}/citizens`), (snap) => {
+            if (cityViewedUid !== uid) return;
+            window._cityCurrentCitizens = snap.exists() ? snap.val() : {};
+            renderizarCidade();
+        });
+    }
+
+    function renderizarCidade() {
+        const map   = document.getElementById('cityMap');
+        const nivel = window._cityCurrentLevel || 1;
+        const citizens = window._cityCurrentCitizens || {};
+        const ids = Object.keys(citizens);
+
+        map.innerHTML = "";
+        pararAnimacoesCidade();
+
+        if (ids.length === 0) {
+            const msg = document.createElement('p');
+            msg.className = "city-empty-msg";
+            msg.id = "cityEmptyMsg";
+            msg.innerText = "Nenhum stickman hospedado ainda nesta cidade. Puxe um stickman com o app desktop (com o site aberto) para vê-lo aparecer aqui.";
+            map.appendChild(msg);
+            return;
+        }
+
+        const cols   = Math.max(4, nivel + 3);
+        const rows   = Math.max(3, Math.ceil(ids.length / cols) + 1);
+        const cellW  = 140, cellH = 130;
+        map.style.width  = `${cols * cellW + 60}px`;
+        map.style.height = `${rows * cellH + 60}px`;
+
+        for (let r = 1; r < rows; r++) {
+            const road = document.createElement('div');
+            road.className   = "city-road-h";
+            road.style.top   = `${r * cellH - 13}px`;
+            map.appendChild(road);
+        }
+
+        ids.forEach((id, i) => {
+            const c   = citizens[id];
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+            const baseX = 30 + col * cellW;
+            const baseY = 30 + row * cellH;
+            const fac = fatorFaccao(c.alignment);
+            const cor = c.color || "#999999";
+
+            const house = document.createElement('div');
+            house.className   = "house";
+            house.style.left  = `${baseX}px`;
+            house.style.top   = `${baseY}px`;
+            house.innerHTML = `
+                <div class="house-roof ${fac}"></div>
+                <div class="house-body" style="background:${cor}33; border-color:${cor};">
+                    <div class="house-window" style="left:8px;"></div>
+                    <div class="house-window" style="right:8px;"></div>
+                    <div class="house-door" style="background:${cor};"></div>
+                </div>
+                <div class="house-name">${c.name}</div>
+            `;
+            house.addEventListener('click', () => abrirDetalhesCidadao(c));
+            map.appendChild(house);
+
+            const stick = document.createElement('div');
+            stick.className = "stick-citizen";
+            stick.id = `citizen-${id}`;
+            stick.style.left = `${baseX + 35}px`;
+            stick.style.top  = `${baseY + 62}px`;
+            stick.innerHTML = `
+                <span class="citizen-tag" style="color:${cor};">${c.name}</span>
+                <svg viewBox="0 0 22 40">
+                    <circle cx="11" cy="7" r="6" fill="none" stroke="${cor}" stroke-width="2"/>
+                    <line x1="11" y1="13" x2="11" y2="28" stroke="${cor}" stroke-width="2"/>
+                    <line x1="11" y1="17" x2="3"  y2="24" stroke="${cor}" stroke-width="2"/>
+                    <line x1="11" y1="17" x2="19" y2="24" stroke="${cor}" stroke-width="2"/>
+                    <line x1="11" y1="28" x2="4"  y2="39" stroke="${cor}" stroke-width="2"/>
+                    <line x1="11" y1="28" x2="18" y2="39" stroke="${cor}" stroke-width="2"/>
+                </svg>
+            `;
+            stick.addEventListener('click', (ev) => { ev.stopPropagation(); abrirDetalhesCidadao(c); });
+            map.appendChild(stick);
+        });
+
+        iniciarPasseioCidadaos(ids, cols, rows);
+        iniciarCaos(citizens);
+    }
+
+    function iniciarPasseioCidadaos(ids, cols, rows) {
+        const cellW = 140, cellH = 130;
+        const maxX  = cols * cellW;
+        const maxY  = rows * cellH;
+        cityWalkTimer = setInterval(() => {
+            ids.forEach(id => {
+                const el = document.getElementById(`citizen-${id}`);
+                if (!el) return;
+                const curLeft = parseFloat(el.style.left) || 0;
+                const curTop  = parseFloat(el.style.top)  || 0;
+                let nx = curLeft + (Math.random() * 90 - 45);
+                let ny = curTop  + (Math.random() * 60 - 30);
+                nx = Math.max(15, Math.min(maxX - 15, nx));
+                ny = Math.max(15, Math.min(maxY - 15, ny));
+                el.style.left = `${nx}px`;
+                el.style.top  = `${ny}px`;
+            });
+        }, 4000);
+    }
+
+    function iniciarCaos(citizens) {
+        cityChaosTimer = setInterval(() => {
+            const lista  = Object.values(citizens);
+            const viloes = lista.filter(c => fatorFaccao(c.alignment) === "villain");
+            const herois = lista.filter(c => fatorFaccao(c.alignment) === "hero");
+            if (viloes.length === 0) return;
+            const vilao = viloes[Math.floor(Math.random() * viloes.length)];
+            cityFeedLog(`😈 <b>${vilao.name}</b> tentou causar caos em um distrito!`, "#ff3333");
+            if (herois.length > 0 && Math.random() > 0.35) {
+                const heroi = herois[Math.floor(Math.random() * herois.length)];
+                setTimeout(() => cityFeedLog(`🦸 <b>${heroi.name}</b> interceptou e conteve o ataque!`, "#00ff66"), 1300);
+            } else {
+                setTimeout(() => cityFeedLog(`💥 O caos se espalhou por um pedaço da cidade!`, "#ff9900"), 1300);
+            }
+        }, 18000);
+    }
+
+    async function abrirDetalhesCidadao(c) {
+        const fac = fatorFaccao(c.alignment);
+        const facLabel = fac === "hero" ? "Protetor do Distrito" : fac === "villain" ? "Sindicato do Caos" : "Cidadão Comum";
+        document.getElementById('cityModalName').innerText       = c.name;
+        document.getElementById('cityModalFaction').innerText    = facLabel;
+        document.getElementById('cityModalArquetipo').innerText  = c.arquetipo || "Desconhecido";
+        document.getElementById('cityModalMortes').innerText     = c.mortes ?? 0;
+        document.getElementById('cityModalEspirito').innerText   = c.pontos_espirito ?? "--";
+        document.getElementById('cityModalSkills').innerText     = (c.skills_ativas && c.skills_ativas.length) ? c.skills_ativas.join(", ") : "Nenhum";
+        document.getElementById('cityModalAmigos').innerText     = (c.amigos && c.amigos.length) ? c.amigos.join(", ") : "Nenhum";
+        document.getElementById('cityModalRivais').innerText     = (c.inimigos && c.inimigos.length) ? c.inimigos.join(", ") : "Nenhum";
+        document.getElementById('cityModalDesde').innerText      = c.entered_at ? new Date(c.entered_at).toLocaleString('pt-BR') : "--";
+        document.getElementById('cityModalBackdrop').style.display = "flex";
+    }
+
+    document.getElementById('btnFecharCityModal').addEventListener('click', () => {
+        document.getElementById('cityModalBackdrop').style.display = "none";
+    });
+
+    function ouvirConvitesDeCidade() {
+        onValue(ref(db, `city_invites/${currentUser.uid}`), (snapshot) => {
+            if (!snapshot.exists()) return;
+            const inv = snapshot.val();
+            if (inv.status === "pending") {
+                if (confirm(`${inv.fromName} te convidou para construir stickmans na cidade dele(a)! Aceitar?`)) {
+                    set(ref(db, `cities/${inv.cityOwnerUid}/collaborators/${currentUser.uid}`), true).then(() => {
+                        remove(ref(db, `city_invites/${currentUser.uid}`));
+                        alert(`Aceito! Peça o Código de Operador de ${inv.fromName} (aba Meu Perfil dele) e cole no seu app desktop para hospedar seus stickmans na cidade dele(a).`);
+                    });
+                } else {
+                    remove(ref(db, `city_invites/${currentUser.uid}`));
+                }
+            }
+        });
+    }
+
 </script>
 </body>
 </html>
