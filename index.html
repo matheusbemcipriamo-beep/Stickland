@@ -700,7 +700,6 @@
     // ───────────────────────────────────────────────────────────────────────────
 
     // ── CONFIGURAÇÃO DO FIREBASE ───────────────────────────────────────────────
-    // Substitua os valores abaixo pelos do seu projeto no Firebase Console
     const firebaseConfig = {
         apiKey:            "AIzaSyA2hBfWW0bTd-N9ky95AJEweP6SyNMogyY",
         authDomain:        "stickland-3ccaa.firebaseapp.com",
@@ -722,9 +721,8 @@
     let currentRoomRef  = null;
 
     // ── SINALIZA PARA OS APPS DESKTOP QUE O SITE ESTÁ ABERTO ───────────────────
-    // (desktop_sandbox.py / paint_studio.py checam server_status/is_online)
     const onlineStatusRef = ref(db, 'server_status/is_online');
-    set(onlineStatusRef, true).catch(() => {});
+    set(onlineStatusRef, true).catch((e) => console.error("[STATUS] Falha ao marcar online:", e));
     try {
         onDisconnect(onlineStatusRef).set(false);
     } catch (e) { /* ignora se onDisconnect não estiver disponível */ }
@@ -758,30 +756,35 @@
             statusBox.style.color = "#00ff66";
             statusBox.innerText   = `[+] TERMINAL ATIVO: OPERADOR CONECTADO COMO ${user.displayName.toUpperCase()}`;
 
-            // Registrar ou verificar perfil na Matrix
-            const userRef  = ref(db, `users/${user.uid}`);
-            const snapshot = await get(userRef);
-            if (!snapshot.exists()) {
-                await set(userRef, {
-                    name:  user.displayName,
-                    color: "#00ffff",
-                    uid:   user.uid,
-                    email: user.email
-                });
+            try {
+                // Registrar ou verificar perfil na Matrix
+                const userRef  = ref(db, `users/${user.uid}`);
+                const snapshot = await get(userRef);
+                if (!snapshot.exists()) {
+                    await set(userRef, {
+                        name:  user.displayName,
+                        color: "#00ffff",
+                        uid:   user.uid,
+                        email: user.email
+                    });
+                }
+
+                // Preencher campo de apelido com o nome atual
+                const uData = snapshot.exists() ? snapshot.val() : {};
+                document.getElementById('profileName').value = uData.name || user.displayName;
+
+                // Exibe o código de operador (UID) para vincular os apps desktop
+                document.getElementById('myOperatorUid').innerText = user.uid;
+            } catch (e) {
+                console.error("[PERFIL] Falha ao carregar/gravar perfil:", e);
+                document.getElementById('myOperatorUid').innerText = user.uid; // garante que o UID apareça mesmo se o resto falhar
             }
 
-            // Preencher campo de apelido com o nome atual
-            const uData = snapshot.exists() ? snapshot.val() : {};
-            document.getElementById('profileName').value = uData.name || user.displayName;
-
-            // Exibe o código de operador (UID) para vincular os apps desktop
-            document.getElementById('myOperatorUid').innerText = user.uid;
-
-            // Inicia os sistemas principais
-            initChat();
-            initFeed();
-            initMultiplayerSystem();
-            initCity();
+            // Inicia os sistemas principais (cada um isolado, um erro em um não derruba os outros)
+            try { initChat(); } catch (e) { console.error("[INIT] chat:", e); }
+            try { initFeed(); } catch (e) { console.error("[INIT] feed:", e); }
+            try { initMultiplayerSystem(); } catch (e) { console.error("[INIT] multiplayer:", e); }
+            try { initCity(); } catch (e) { console.error("[INIT] cidade:", e); }
         } else {
             currentUser = null;
             document.getElementById('authArea').style.display = 'block';
@@ -922,7 +925,6 @@
             const socialBox = document.getElementById('blockSocialNet');
             socialBox.innerHTML = "";
 
-            // Lê amigos: pode ser array direto, ou extraído do dict relacoes
             let amgList = [];
             let inimList = [];
             if (Array.isArray(foundData.amigos) && foundData.amigos.length > 0) {
@@ -946,11 +948,17 @@
             // Histórico de Combate
             const combatBox = document.getElementById('blockCombatLog');
             combatBox.innerHTML = "";
-            if (foundData.historico_combates && foundData.historico_combates.length > 0) {
-                foundData.historico_combates.forEach(combate => {
-                    combatBox.innerHTML += `<div class="log-entry" style="color:#ffcc00;">[BATALHA]: ${combate}</div>`;
-                });
-            } else {
+            if (foundData.historico_combates) {
+                const combates = Array.isArray(foundData.historico_combates)
+                    ? foundData.historico_combates
+                    : Object.values(foundData.historico_combates);
+                if (combates.length > 0) {
+                    combates.forEach(combate => {
+                        combatBox.innerHTML += `<div class="log-entry" style="color:#ffcc00;">[BATALHA]: ${combate}</div>`;
+                    });
+                }
+            }
+            if (combatBox.innerHTML === "") {
                 if (fac === "vilao" || fac === "hostil") {
                     combatBox.innerHTML = "<div class='log-entry' style='color:#ff3333;'>[ALERTA]: Registros indicam vandalismo nas fronteiras da Stickland!</div>";
                 } else if (fac === "heroi" || fac === "pacífico") {
@@ -979,7 +987,7 @@
                 chatWin.innerHTML += `<div class="chat-msg"><span class="chat-time">[${new Date(m.timestamp).toLocaleTimeString()}]</span> <span style="color:${m.color || '#fff'}">${m.author}</span>: ${m.text}</div>`;
             });
             chatWin.scrollTop = chatWin.scrollHeight;
-        });
+        }, (err) => console.error("[CHAT] onValue erro:", err));
     }
 
     document.getElementById('btnEnviarChat').addEventListener('click', () => {
@@ -994,7 +1002,7 @@
                 timestamp: Date.now()
             });
             document.getElementById('chatMessage').value = "";
-        });
+        }).catch(e => console.error("[CHAT] Falha ao enviar:", e));
     });
 
     // Enviar chat com Enter
@@ -1020,7 +1028,7 @@
                         <div class="post-body">${p.text}</div>
                     </div>`;
             });
-        });
+        }, (err) => console.error("[FEED] onValue erro:", err));
     }
 
     document.getElementById('btnPostar').addEventListener('click', () => {
@@ -1035,7 +1043,7 @@
                 date:   new Date().toLocaleString('pt-BR')
             });
             document.getElementById('postText').value = "";
-        });
+        }).catch(e => console.error("[FEED] Falha ao postar:", e));
     });
 
     // ── CONFIGURAÇÕES DE PERFIL ───────────────────────────────────────────────
@@ -1047,7 +1055,11 @@
         update(ref(db, `users/${currentUser.uid}`), {
             name:  newName,
             color: newColor
-        }).then(() => alert("Identidade Virtual atualizada na Matrix!"));
+        }).then(() => alert("Identidade Virtual atualizada na Matrix!"))
+          .catch(e => {
+              console.error("[PERFIL] Falha ao salvar:", e);
+              alert("Não foi possível salvar (veja o console - F12). Provavelmente as regras do Firebase estão bloqueando a escrita em /users.");
+          });
     });
 
     document.getElementById('btnCopyUid').addEventListener('click', () => {
@@ -1071,35 +1083,45 @@
         resultsDiv.innerHTML = "";
         if (!searchStr) return;
 
-        const usersSnap = await get(ref(db, 'users'));
-        if (!usersSnap.exists()) return;
+        try {
+            const usersSnap = await get(ref(db, 'users'));
+            if (!usersSnap.exists()) return;
 
-        usersSnap.forEach(childSnap => {
-            const u = childSnap.val();
-            if (u.uid !== currentUser.uid && u.name && u.name.toLowerCase().includes(searchStr)) {
-                const card = document.createElement('div');
-                card.className = "friend-card";
-                card.innerHTML = `
-                    <span style="color:${u.color || '#fff'}">${u.name}</span>
-                    <button class="add-btn" data-uid="${u.uid}" style="padding:5px 10px; font-size:11px; background:#ff9900;">Enviar Solicitação</button>
-                `;
-                resultsDiv.appendChild(card);
+            usersSnap.forEach(childSnap => {
+                const u = childSnap.val();
+                if (u.uid !== currentUser.uid && u.name && u.name.toLowerCase().includes(searchStr)) {
+                    const card = document.createElement('div');
+                    card.className = "friend-card";
+                    card.innerHTML = `
+                        <span style="color:${u.color || '#fff'}">${u.name}</span>
+                        <button class="add-btn" data-uid="${u.uid}" style="padding:5px 10px; font-size:11px; background:#ff9900;">Enviar Solicitação</button>
+                    `;
+                    resultsDiv.appendChild(card);
 
-                card.querySelector('.add-btn').addEventListener('click', async () => {
-                    const snapUser       = await get(ref(db, `users/${currentUser.uid}`));
-                    const meuNomeAtualizado = snapUser.exists() ? snapUser.val().name : currentUser.displayName;
+                    card.querySelector('.add-btn').addEventListener('click', async () => {
+                        try {
+                            const snapUser       = await get(ref(db, `users/${currentUser.uid}`));
+                            const meuNomeAtualizado = snapUser.exists() ? snapUser.val().name : currentUser.displayName;
 
-                    await set(ref(db, `friend_requests/${u.uid}/${currentUser.uid}`), {
-                        uid:  currentUser.uid,
-                        name: meuNomeAtualizado
+                            await set(ref(db, `friend_requests/${u.uid}/${currentUser.uid}`), {
+                                uid:  currentUser.uid,
+                                name: meuNomeAtualizado
+                            });
+                            alert(`Solicitação enviada para ${u.name}!`);
+                        } catch (e) {
+                            console.error("[AMIGOS] Falha ao enviar solicitação:", e);
+                            alert("Não foi possível enviar a solicitação (veja o console).");
+                        }
                     });
-                    alert(`Solicitação enviada para ${u.name}!`);
-                });
-            }
-        });
+                }
+            });
 
-        if (resultsDiv.innerHTML === "") {
-            resultsDiv.innerHTML = `<p style="color:#666; font-size:12px;">Nenhum operador encontrado.</p>`;
+            if (resultsDiv.innerHTML === "") {
+                resultsDiv.innerHTML = `<p style="color:#666; font-size:12px;">Nenhum operador encontrado.</p>`;
+            }
+        } catch (e) {
+            console.error("[AMIGOS] Falha na busca:", e);
+            resultsDiv.innerHTML = `<p style="color:#ff3333; font-size:12px;">Erro ao buscar operadores (veja o console).</p>`;
         }
     });
 
@@ -1126,23 +1148,28 @@
                 container.appendChild(card);
 
                 card.querySelector('.invite-btn').addEventListener('click', async () => {
-                    const snapUser          = await get(ref(db, `users/${currentUser.uid}`));
-                    const meuNomeAtualizado = snapUser.exists() ? snapUser.val().name : currentUser.displayName;
+                    try {
+                        const snapUser          = await get(ref(db, `users/${currentUser.uid}`));
+                        const meuNomeAtualizado = snapUser.exists() ? snapUser.val().name : currentUser.displayName;
 
-                    await set(ref(db, `multiplayer_invites/${f.uid}`), {
-                        hostUid:  currentUser.uid,
-                        hostName: meuNomeAtualizado,
-                        status:   "pending"
-                    });
-                    entrarNaSalaFakePC(currentUser.uid, `Seu Próprio Desktop (Host)`);
-                    alert("Convite enviado! Aguardando o amigo entrar na sala...");
+                        await set(ref(db, `multiplayer_invites/${f.uid}`), {
+                            hostUid:  currentUser.uid,
+                            hostName: meuNomeAtualizado,
+                            status:   "pending"
+                        });
+                        entrarNaSalaFakePC(currentUser.uid, `Seu Próprio Desktop (Host)`);
+                        alert("Convite enviado! Aguardando o amigo entrar na sala...");
+                    } catch (e) {
+                        console.error("[MULTIPLAYER] Falha ao convidar:", e);
+                        alert("Não foi possível enviar o convite (veja o console).");
+                    }
                 });
 
                 card.querySelector('.visit-btn').addEventListener('click', () => {
                     entrarNaSalaFakePC(f.uid, `Desktop de ${f.name}`);
                 });
             });
-        });
+        }, (err) => console.error("[AMIGOS] onValue erro:", err));
     }
 
     // Listar Pedidos de Amizade Pendentes
@@ -1166,16 +1193,21 @@
                 container.appendChild(card);
 
                 card.querySelector('.accept-btn').addEventListener('click', async () => {
-                    const snapUser          = await get(ref(db, `users/${currentUser.uid}`));
-                    const meuNomeAtualizado = snapUser.exists() ? snapUser.val().name : currentUser.displayName;
+                    try {
+                        const snapUser          = await get(ref(db, `users/${currentUser.uid}`));
+                        const meuNomeAtualizado = snapUser.exists() ? snapUser.val().name : currentUser.displayName;
 
-                    await set(ref(db, `friends/${currentUser.uid}/${req.uid}`), { uid: req.uid,         name: req.name });
-                    await set(ref(db, `friends/${req.uid}/${currentUser.uid}`), { uid: currentUser.uid, name: meuNomeAtualizado });
-                    await remove(ref(db, `friend_requests/${currentUser.uid}/${req.uid}`));
-                    alert("Amizade firmada na Matrix!");
+                        await set(ref(db, `friends/${currentUser.uid}/${req.uid}`), { uid: req.uid,         name: req.name });
+                        await set(ref(db, `friends/${req.uid}/${currentUser.uid}`), { uid: currentUser.uid, name: meuNomeAtualizado });
+                        await remove(ref(db, `friend_requests/${currentUser.uid}/${req.uid}`));
+                        alert("Amizade firmada na Matrix!");
+                    } catch (e) {
+                        console.error("[AMIGOS] Falha ao aceitar:", e);
+                        alert("Não foi possível aceitar (veja o console).");
+                    }
                 });
             });
-        });
+        }, (err) => console.error("[SOLICITACOES] onValue erro:", err));
     }
 
     // Ouvir Convites de Salas Multiplayer
@@ -1191,7 +1223,7 @@
                     remove(ref(db, `multiplayer_invites/${currentUser.uid}`));
                 }
             }
-        });
+        }, (err) => console.error("[CONVITES] onValue erro:", err));
     }
 
     // ── PC FAKE RETRO ─────────────────────────────────────────────────────────
@@ -1202,7 +1234,6 @@
         currentRoomRef = ref(db, `rooms/${roomUid}`);
         ouvirElementosDaSala();
 
-        // Remove listener anterior para evitar duplicação
         document.getElementById('fake-pc-room').removeEventListener('mousemove', enviarPosicaoMouse);
         document.getElementById('fake-pc-room').addEventListener('mousemove', enviarPosicaoMouse);
     }
@@ -1222,7 +1253,7 @@
                 y:        pctY,
                 name:     meuNome,
                 lastSeen: Date.now()
-            });
+            }).catch(e => console.error("[SALA] Falha ao enviar cursor:", e));
         });
     }
 
@@ -1232,7 +1263,6 @@
         onValue(currentRoomRef, (snapshot) => {
             const canvas = document.getElementById('multiplayer-canvas');
 
-            // Remove cursores antigos
             document.querySelectorAll('.multiplayer-cursor').forEach(c => c.remove());
 
             if (!snapshot.exists()) return;
@@ -1270,7 +1300,7 @@
                     canvas.appendChild(cursorEl);
                 });
             }
-        });
+        }, (err) => console.error("[SALA] onValue erro:", err));
     }
 
     document.getElementById('btnSairSala').addEventListener('click', () => {
@@ -1283,9 +1313,6 @@
     });
 
     // ── STICKLAND CITY (ABA CIDADE — ESTILO CLUB PENGUIM) ──────────────────────
-    // Stickmans "entram" aqui quando puxados da área de trabalho pelos apps
-    // desktop (desktop_sandbox.py envia para cities/{uid}/citizens/{id} e
-    // paint_studio.py remove de lá para puxar o stickman de volta pro PC).
     let cityViewedUid  = null;
     let cityWalkTimer  = null;
     let cityChaosTimer = null;
@@ -1328,6 +1355,9 @@
                 const nivelAtual = snap.exists() ? snap.val() : 1;
                 update(ref(db, `cities/${currentUser.uid}`), { level: nivelAtual + 1 }).then(() => {
                     cityFeedLog(`🏗️ Sua cidade cresceu para o <b>nível ${nivelAtual + 1}</b>! Novos terrenos liberados.`, "#00ff66");
+                }).catch(e => {
+                    console.error("[CIDADE] Falha ao expandir:", e);
+                    alert("Não foi possível expandir a cidade (veja o console). Provavelmente as regras do Firebase estão bloqueando a escrita em /cities.");
                 });
             });
         });
@@ -1345,14 +1375,19 @@
             const meuSnap = await get(ref(db, `users/${currentUser.uid}`));
             const meuNome = meuSnap.exists() ? meuSnap.val().name : currentUser.displayName;
 
-            await set(ref(db, `city_invites/${uids[idx]}`), {
-                fromUid:       currentUser.uid,
-                fromName:      meuNome,
-                cityOwnerUid:  currentUser.uid,
-                cityOwnerName: meuNome,
-                status:        "pending"
-            });
-            alert(`Convite de construção enviado para ${nomes[idx]}! Quando ele(a) aceitar, poderá usar o código de operador da SUA conta no app desktop para hospedar stickmans na sua cidade.`);
+            try {
+                await set(ref(db, `city_invites/${uids[idx]}`), {
+                    fromUid:       currentUser.uid,
+                    fromName:      meuNome,
+                    cityOwnerUid:  currentUser.uid,
+                    cityOwnerName: meuNome,
+                    status:        "pending"
+                });
+                alert(`Convite de construção enviado para ${nomes[idx]}! Quando ele(a) aceitar, poderá usar o código de operador da SUA conta no app desktop para hospedar stickmans na sua cidade.`);
+            } catch (e) {
+                console.error("[CIDADE] Falha ao convidar:", e);
+                alert("Não foi possível enviar o convite (veja o console).");
+            }
         });
     }
 
@@ -1368,7 +1403,7 @@
                 opt.text  = `🏙️ Cidade de ${f.name}`;
                 sel.appendChild(opt);
             });
-        });
+        }, (err) => console.error("[CIDADE] seletor onValue erro:", err));
     }
 
     function trocarCidadeVisualizada(uidAlvo) {
@@ -1381,13 +1416,13 @@
             document.getElementById('cityLevelTag').innerText = `Nível da Cidade: ${nivel}`;
             window._cityCurrentLevel = nivel;
             renderizarCidade();
-        });
+        }, (err) => console.error("[CIDADE] level onValue erro:", err));
 
         onValue(ref(db, `cities/${uid}/citizens`), (snap) => {
             if (cityViewedUid !== uid) return;
             window._cityCurrentCitizens = snap.exists() ? snap.val() : {};
             renderizarCidade();
-        });
+        }, (err) => console.error("[CIDADE] citizens onValue erro:", err));
     }
 
     function renderizarCidade() {
@@ -1468,6 +1503,7 @@
 
         iniciarPasseioCidadaos(ids, cols, rows);
         iniciarCaos(citizens);
+        iniciarConversasCidade(citizens);
     }
 
     function iniciarPasseioCidadaos(ids, cols, rows) {
@@ -1490,51 +1526,95 @@
         }, 4000);
     }
 
+    // ── CAOS DA CIDADE (agora grava histórico de combate real no Firebase) ────
     function iniciarCaos(citizens) {
-    cityChaosTimer = setInterval(async () => {
-        const cityOwnerUid = cityViewedUid; // trava o uid da cidade no instante do evento
-        const entradas = Object.entries(citizens); // [ [id, dados], ... ]
-        const viloes = entradas.filter(([id, c]) => fatorFaccao(c.alignment) === "villain");
-        const herois = entradas.filter(([id, c]) => fatorFaccao(c.alignment) === "hero");
-        if (viloes.length === 0) return;
+        cityChaosTimer = setInterval(async () => {
+            const cityOwnerUid = cityViewedUid; // trava o uid da cidade no instante do evento
+            const entradas = Object.entries(citizens); // [ [id, dados], ... ]
+            const viloes = entradas.filter(([id, c]) => fatorFaccao(c.alignment) === "villain");
+            const herois = entradas.filter(([id, c]) => fatorFaccao(c.alignment) === "hero");
+            if (viloes.length === 0) return;
 
-        const [vilaoId, vilao] = viloes[Math.floor(Math.random() * viloes.length)];
-        cityFeedLog(`😈 <b>${vilao.name}</b> tentou causar caos em um distrito!`, "#ff3333");
+            const [vilaoId, vilao] = viloes[Math.floor(Math.random() * viloes.length)];
+            cityFeedLog(`😈 <b>${vilao.name}</b> tentou causar caos em um distrito!`, "#ff3333");
 
-        const vilaoRef = ref(db, `cities/${cityOwnerUid}/citizens/${vilaoId}`);
+            const vilaoRef = ref(db, `cities/${cityOwnerUid}/citizens/${vilaoId}`);
 
-        if (herois.length > 0 && Math.random() > 0.35) {
-            const [heroiId, heroi] = herois[Math.floor(Math.random() * herois.length)];
+            if (herois.length > 0 && Math.random() > 0.35) {
+                const [heroiId, heroi] = herois[Math.floor(Math.random() * herois.length)];
 
-            setTimeout(async () => {
-                cityFeedLog(`🦸 <b>${heroi.name}</b> interceptou e conteve o ataque!`, "#00ff66");
-                const heroiRef = ref(db, `cities/${cityOwnerUid}/citizens/${heroiId}`);
-                const registro = `${heroi.name} interceptou um ataque de ${vilao.name} na Stickland City.`;
+                setTimeout(async () => {
+                    cityFeedLog(`🦸 <b>${heroi.name}</b> interceptou e conteve o ataque!`, "#00ff66");
+                    const heroiRef = ref(db, `cities/${cityOwnerUid}/citizens/${heroiId}`);
+                    const registro = `${heroi.name} interceptou um ataque de ${vilao.name} na Stickland City.`;
 
-                try {
-                    await push(child(vilaoRef, 'historico_combates'), registro);
-                    await push(child(heroiRef, 'historico_combates'), registro);
-                    await update(child(vilaoRef, 'relacoes'), { [heroi.name]: "rival" });
-                    await update(child(heroiRef, 'relacoes'), { [vilao.name]: "rival" });
-                } catch (e) {
-                    console.error("[CIDADE] Falha ao gravar combate:", e);
+                    try {
+                        await push(child(vilaoRef, 'historico_combates'), registro);
+                        await push(child(heroiRef, 'historico_combates'), registro);
+                        await update(child(vilaoRef, 'relacoes'), { [heroi.name]: "rival" });
+                        await update(child(heroiRef, 'relacoes'), { [vilao.name]: "rival" });
+                    } catch (e) {
+                        console.error("[CIDADE] Falha ao gravar combate:", e);
+                    }
+                }, 1300);
+
+            } else {
+                setTimeout(async () => {
+                    cityFeedLog(`💥 O caos se espalhou por um pedaço da cidade!`, "#ff9900");
+                    const registro = `${vilao.name} espalhou o caos sem oposição na Stickland City.`;
+
+                    try {
+                        await push(child(vilaoRef, 'historico_combates'), registro);
+                    } catch (e) {
+                        console.error("[CIDADE] Falha ao gravar combate:", e);
+                    }
+                }, 1300);
+            }
+        }, 18000);
+    }
+
+    // ── CONVERSAS E AMIZADES ENTRE CIDADÃOS (grava memory/relacoes no Firebase) ─
+    let cityChatTimer = null;
+    function iniciarConversasCidade(citizens) {
+        if (cityChatTimer) clearInterval(cityChatTimer);
+        const FRASES = [
+            ["E aí, tudo tranquilo por aqui?", "Tranquilo sim, só de olho no distrito."],
+            ["Já viu a casa nova ali no fim da rua?", "Vi sim, ficou legal demais."],
+            ["Bora dar uma volta pela cidade?", "Bora, tô sem nada pra fazer mesmo."],
+            ["Acho que vai chover hoje na Stickland...", "Duvido, mas topo apostar."]
+        ];
+        cityChatTimer = setInterval(async () => {
+            const cityOwnerUid = cityViewedUid;
+            const entradas = Object.entries(citizens);
+            if (entradas.length < 2) return;
+
+            const idx1 = Math.floor(Math.random() * entradas.length);
+            let idx2 = Math.floor(Math.random() * entradas.length);
+            if (idx2 === idx1) idx2 = (idx2 + 1) % entradas.length;
+
+            const [id1, c1] = entradas[idx1];
+            const [id2, c2] = entradas[idx2];
+            const [fala1, fala2] = FRASES[Math.floor(Math.random() * FRASES.length)];
+
+            cityFeedLog(`💬 <b>${c1.name}</b> e <b>${c2.name}</b> bateram um papo na cidade.`, "#00ffff");
+
+            const ref1 = ref(db, `cities/${cityOwnerUid}/citizens/${id1}`);
+            const ref2 = ref(db, `cities/${cityOwnerUid}/citizens/${id2}`);
+
+            try {
+                await push(child(ref1, 'memory'), { user: c2.name, ai: fala1 });
+                await push(child(ref2, 'memory'), { user: c1.name, ai: fala2 });
+                // chance de virarem amigos com a conversa
+                if (Math.random() < 0.4) {
+                    await update(child(ref1, 'relacoes'), { [c2.name]: "amigo" });
+                    await update(child(ref2, 'relacoes'), { [c1.name]: "amigo" });
+                    cityFeedLog(`🤝 <b>${c1.name}</b> e <b>${c2.name}</b> viraram amigos na Stickland!`, "#00ff66");
                 }
-            }, 1300);
-
-        } else {
-            setTimeout(async () => {
-                cityFeedLog(`💥 O caos se espalhou por um pedaço da cidade!`, "#ff9900");
-                const registro = `${vilao.name} espalhou o caos sem oposição na Stickland City.`;
-
-                try {
-                    await push(child(vilaoRef, 'historico_combates'), registro);
-                } catch (e) {
-                    console.error("[CIDADE] Falha ao gravar combate:", e);
-                }
-            }, 1300);
-        }
-    }, 18000);
-}
+            } catch (e) {
+                console.error("[CIDADE] Falha ao gravar conversa/amizade:", e);
+            }
+        }, 22000);
+    }
 
     async function abrirDetalhesCidadao(c) {
         const fac = fatorFaccao(c.alignment);
@@ -1564,12 +1644,12 @@
                     set(ref(db, `cities/${inv.cityOwnerUid}/collaborators/${currentUser.uid}`), true).then(() => {
                         remove(ref(db, `city_invites/${currentUser.uid}`));
                         alert(`Aceito! Peça o Código de Operador de ${inv.fromName} (aba Meu Perfil dele) e cole no seu app desktop para hospedar seus stickmans na cidade dele(a).`);
-                    });
+                    }).catch(e => console.error("[CIDADE] Falha ao aceitar convite:", e));
                 } else {
                     remove(ref(db, `city_invites/${currentUser.uid}`));
                 }
             }
-        });
+        }, (err) => console.error("[CIDADE] convites onValue erro:", err));
     }
 
 </script>
