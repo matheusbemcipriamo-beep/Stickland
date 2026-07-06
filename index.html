@@ -1491,21 +1491,50 @@
     }
 
     function iniciarCaos(citizens) {
-        cityChaosTimer = setInterval(() => {
-            const lista  = Object.values(citizens);
-            const viloes = lista.filter(c => fatorFaccao(c.alignment) === "villain");
-            const herois = lista.filter(c => fatorFaccao(c.alignment) === "hero");
-            if (viloes.length === 0) return;
-            const vilao = viloes[Math.floor(Math.random() * viloes.length)];
-            cityFeedLog(`😈 <b>${vilao.name}</b> tentou causar caos em um distrito!`, "#ff3333");
-            if (herois.length > 0 && Math.random() > 0.35) {
-                const heroi = herois[Math.floor(Math.random() * herois.length)];
-                setTimeout(() => cityFeedLog(`🦸 <b>${heroi.name}</b> interceptou e conteve o ataque!`, "#00ff66"), 1300);
-            } else {
-                setTimeout(() => cityFeedLog(`💥 O caos se espalhou por um pedaço da cidade!`, "#ff9900"), 1300);
-            }
-        }, 18000);
-    }
+    cityChaosTimer = setInterval(async () => {
+        const cityOwnerUid = cityViewedUid; // trava o uid da cidade no instante do evento
+        const entradas = Object.entries(citizens); // [ [id, dados], ... ]
+        const viloes = entradas.filter(([id, c]) => fatorFaccao(c.alignment) === "villain");
+        const herois = entradas.filter(([id, c]) => fatorFaccao(c.alignment) === "hero");
+        if (viloes.length === 0) return;
+
+        const [vilaoId, vilao] = viloes[Math.floor(Math.random() * viloes.length)];
+        cityFeedLog(`😈 <b>${vilao.name}</b> tentou causar caos em um distrito!`, "#ff3333");
+
+        const vilaoRef = ref(db, `cities/${cityOwnerUid}/citizens/${vilaoId}`);
+
+        if (herois.length > 0 && Math.random() > 0.35) {
+            const [heroiId, heroi] = herois[Math.floor(Math.random() * herois.length)];
+
+            setTimeout(async () => {
+                cityFeedLog(`🦸 <b>${heroi.name}</b> interceptou e conteve o ataque!`, "#00ff66");
+                const heroiRef = ref(db, `cities/${cityOwnerUid}/citizens/${heroiId}`);
+                const registro = `${heroi.name} interceptou um ataque de ${vilao.name} na Stickland City.`;
+
+                try {
+                    await push(child(vilaoRef, 'historico_combates'), registro);
+                    await push(child(heroiRef, 'historico_combates'), registro);
+                    await update(child(vilaoRef, 'relacoes'), { [heroi.name]: "rival" });
+                    await update(child(heroiRef, 'relacoes'), { [vilao.name]: "rival" });
+                } catch (e) {
+                    console.error("[CIDADE] Falha ao gravar combate:", e);
+                }
+            }, 1300);
+
+        } else {
+            setTimeout(async () => {
+                cityFeedLog(`💥 O caos se espalhou por um pedaço da cidade!`, "#ff9900");
+                const registro = `${vilao.name} espalhou o caos sem oposição na Stickland City.`;
+
+                try {
+                    await push(child(vilaoRef, 'historico_combates'), registro);
+                } catch (e) {
+                    console.error("[CIDADE] Falha ao gravar combate:", e);
+                }
+            }, 1300);
+        }
+    }, 18000);
+}
 
     async function abrirDetalhesCidadao(c) {
         const fac = fatorFaccao(c.alignment);
